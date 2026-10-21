@@ -1,3 +1,4 @@
+from postorebaires.sqlite_utils import connect
 import os
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import tempfile
@@ -6,7 +7,7 @@ import unittest
 from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtGui import QPixmap, QColor, QPdfWriter, QPainter
 from PySide6.QtCore import Qt
-from postorebaires.ui import MainWindow, PaymentDialog, SettingsDialog, STYLE, load_image
+from postorebaires.ui import MainWindow, PaymentDialog, SettingsDialog, STYLE, load_image, ProductDialog, ProductSearchDialog
 
 class NativeUI(unittest.TestCase):
     @classmethod
@@ -70,6 +71,124 @@ class NativeUI(unittest.TestCase):
             painter.end()
             self.assertFalse(load_image(str(pdf),1).isNull())
             with self.assertRaises(ValueError):load_image(str(pdf),2)
+
+    def test_catalog_selection_is_explicit_and_does_not_import_stock_or_cost(self):
+        from postorebaires.catalog import Catalog
+        with tempfile.TemporaryDirectory() as folder:
+            import sqlite3
+            source=Path(folder)/'source.sqlite'
+            with connect(source) as con:
+                con.execute('CREATE TABLE precios(ean TEXT,name TEXT,precio_centavos INTEGER,fetched_at INTEGER)')
+                con.execute("INSERT INTO precios VALUES ('00012345','Referencia',12550,1767225600)")
+            self.window.catalog=Catalog(Path(folder)/'catalog.sqlite')
+            self.window.catalog.import_file(source)
+            d=ProductDialog(self.window.store,self.window)
+            d.code.setText('00012345')
+            d.price.setText('200');d.cost.setText('80');d.stock.setValue(7)
+            d.lookup()
+            self.assertEqual(d.price.text(),'200')
+            d.apply_reference()
+            self.assertEqual(d.name.text(),'Referencia')
+            self.assertEqual(d.price.text(),'200')
+            d.apply_reference_price()
+            self.assertEqual(d.price.text(),'125.50')
+            self.assertEqual(d.cost.text(),'80')
+            self.assertEqual(d.stock.value(),7)
+            d.deleteLater()
+
+    def test_barcode_replacement_requires_confirmation_and_rejects_duplicates(self):
+        from unittest.mock import patch
+        from PySide6.QtWidgets import QMessageBox
+        w=self.window
+        w.store.clear()
+        original=w.store.products[0].code
+        d=ProductDialog(w.store,w,index=0)
+        d.code.setText('00012345')
+        with patch.object(QMessageBox,'question',return_value=QMessageBox.StandardButton.No) as question:
+            d.save()
+            question.assert_called_once()
+        self.assertEqual(w.store.products[0].code,original)
+        d.code.setText(w.store.products[1].code)
+        with patch.object(QMessageBox,'question') as question, patch.object(QMessageBox,'warning') as warning:
+            d.save()
+            warning.assert_called_once()
+            question.assert_not_called()
+        self.assertEqual(w.store.products[0].code,original)
+        d.code.setText('00012345')
+        with patch.object(QMessageBox,'question',return_value=QMessageBox.StandardButton.Yes):
+            d.save()
+        self.assertEqual(w.store.products[0].code,'00012345')
+        self.assertFalse(any(p.code == original for p in w.store.products))
+        d.deleteLater()
+
+    def test_purchase_search_filters_and_adds_registered_products(self):
+        from postorebaires.storage import LocalStore
+        from postorebaires.domain import Product
+        with tempfile.TemporaryDirectory() as folder:
+            repo=LocalStore(Path(folder)/'store.sqlite')
+            store=repo.load()
+            store.save_product(Product('00012345','Producto manual especial','Productos varios',12300,stock=2))
+            store.save_product(Product('00012346','Producto con referencia','Productos varios',45600,stock=1,reference={'source':'Prueba'}))
+            store.open_turn(0)
+            self.window.store=LocalStore(repo.path).load()
+            d=ProductSearchDialog(self.window,'MANUAL especial')
+            self.assertEqual(d.results.rowCount(),1)
+            d.add_selected()
+            self.assertEqual(d.result(),QDialog.DialogCode.Accepted)
+            self.assertEqual(LocalStore(repo.path).load().cart,{0:1})
+            self.assertEqual(self.window.store.products[0].stock,2)
+            d.deleteLater()
+            d=ProductSearchDialog(self.window,'00012346')
+            self.assertEqual(d.results.rowCount(),1)
+            d.reject()
+            self.assertEqual(self.window.store.cart,{0:1})
+            d.deleteLater()
+            d=ProductSearchDialog(self.window,'no existe')
+            self.assertFalse(d.add_button.isEnabled())
+            from unittest.mock import patch
+            with patch.object(self.window,"product_not_found") as missing:
+                d.add_selected()
+                missing.assert_called_once_with("no existe")
+            self.assertEqual(self.window.store.cart,{0:1})
+            d.deleteLater()
+
+    def test_purchase_search_rejects_stock_and_closed_turn(self):
+        w=self.window
+        w.store.products[0].stock=1
+        d=ProductSearchDialog(w,'779001')
+        self.assertEqual(d.results.item(0,3).text(),'0')
+        d.add_selected()
+        self.assertIn('Stock insuficiente',d.message.text())
+        self.assertEqual(w.store.cart,{0:1})
+        w.store.opened=False
+        d.add_selected()
+        self.assertIn('Abrí un turno',d.message.text())
+        self.assertEqual(d.result(),QDialog.DialogCode.Rejected)
+        d.deleteLater()
+
+    def test_missing_product_choices_and_existing_cart_survives_new_registration(self):
+        from unittest.mock import patch
+        from PySide6.QtWidgets import QMessageBox, QInputDialog
+        from postorebaires.domain import Product
+        w=self.window
+        with patch('postorebaires.ui.QMessageBox') as box, patch.object(w,'product') as product:
+            box.return_value.addButton.side_effect=['manual','new']
+            box.return_value.clickedButton.return_value='new'
+            w.product_not_found('00099999')
+            product.assert_called_once_with(code='00099999')
+            self.assertEqual(w.tabs.currentIndex(),2)
+        with patch('postorebaires.ui.QMessageBox') as box, patch.object(QInputDialog,'getText',return_value=('779002',True)):
+            box.return_value.addButton.side_effect=['manual','new']
+            box.return_value.clickedButton.return_value='manual'
+            w.product_not_found('nombre')
+        self.assertEqual(w.store.cart,{0:1,1:1})
+        w.store.save_product(Product('00099999','Nuevo','Productos varios',100,stock=3))
+        self.assertEqual(w.store.cart,{0:1,1:1})
+        with self.assertRaises(ValueError):w.store.save_product(w.store.products[0],0)
+        with patch.object(w,'product_not_found') as missing:
+            w.scan_input.setText('99999999')
+            w.scan()
+            missing.assert_called_once_with('99999999')
 
     def test_settings_and_tables_create(self):
         d=SettingsDialog(self.window.store,self.window)

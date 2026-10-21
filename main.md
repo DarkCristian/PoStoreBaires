@@ -1,26 +1,111 @@
-# PoStoreBaires — Documentación principal
+# PoStoreBaires
 
-POS gratuito y open source, por Cristian Carroccio. **Beta 1.0 nativa en Python + PySide6/Qt**, con tres solapas: Caja, Arqueo e Insumos. Licencia **GPL-3.0-only**.
+## Un punto de venta para el comercio de todos los días
 
-La versión HTA anterior se conserva como referencia en `prototypes/hta/`. El producto y el repositorio previsto se llaman **PoStoreBaires**. El código activo ya no ejecuta HTA ni JavaScript, ni utiliza WebEngine o un navegador embebido.
+**PoStoreBaires** es un proyecto gratuito y open source de punto de venta, creado por **Cristian Carroccio**, pensado para kioscos, almacenes y pequeños comercios. Reúne ventas, control de caja e inventario en una aplicación de escritorio con tres solapas: **Caja, Arqueo e Insumos**.
 
-## Alcance real
+Desarrollado en **Python y PySide6/Qt**, cuenta con compilaciones para Windows y Linux. Permite trabajar con lector de códigos de barras o teclado, registrar distintos medios de pago y mostrar al cliente el QR o alias del comercio sin depender de una API de cobro.
 
-Beta local **con datos temporales en memoria**. Permite probar ventas, pagos registrados, inventario y arqueo. Todavía no es apta para operación productiva: cerrar descarta ventas, productos y ajustes.
+**Estado del proyecto:** beta en desarrollo. Esta documentación corresponde a **1.0.0-beta.2**, con persistencia local, catálogo y búsqueda. La versión beta.1 conserva su historial y sus paquetes originales. Los campos de perfiles y conectividad anticipan funciones futuras, pero actualmente no autentican usuarios ni sincronizan cajas.
 
-- Caja con lector USB que emula teclado y envía Enter; códigos de ejemplo 779001–779004.
-- Efectivo con vuelto, wallet, débito/crédito y pagos mixtos; importes en centavos enteros.
-- Confirmación wallet solo después de verificar manualmente la acreditación en la cuenta del comercio.
-- Pantalla del cliente en monitor seleccionable: productos, total, QR/alias y resultado.
-- QR propio PNG/JPG/JPEG o página seleccionada de un PDF, renderizada por Qt a imagen. Alias es texto para ingresar en la app, no un código escaneable.
-- Arqueo con saldo inicial, retiros, declaración y diferencias por medio, historial y relevo de cajero al cerrar turno.
-- Insumos: categoría, costo, precio, stock mínimo, bultos/unidades, fotos e ilustraciones originales.
-- Sonidos opcionales independientes: bip y caja registradora. Tutorial integrado.
-- Datos de comercio, logo, papel 58/80 mm y vista previa de ticket interno no fiscal.
+## Características
 
-**Pendiente:** persistencia, base PostgreSQL, servidor y sincronización multicaja, autenticación/roles efectivos, lotes bancarios de tarjetas, impresión térmica, facturación fiscal, consulta de productos y precios por Internet, copias de seguridad. Principal/secundaria/IP y perfiles siguen siendo campos ilustrativos.
+### Caja: vender con lector o teclado
 
-## Ejecutar desde Python
+- Entrada por lectores USB que emulan teclado y envían Enter. También admite código escrito a mano y botón Agregar.
+- Botón **Buscar con lupa** junto al código: abre una ventana dentro de la aplicación y filtra productos por nombre o código mientras escribís.
+- Resultados con nombre, código, precio y stock disponible, descontando las unidades del carrito. Incluye productos cargados manualmente y los registrados a partir del catálogo de referencia.
+- Agregado de una unidad por botón, Enter desde la búsqueda o doble clic sobre un resultado.
+- Carrito con cantidades, precios, subtotales y total; permite quitar unidades, eliminar productos o vaciar la venta.
+- Validación de turno abierto y existencias antes de agregar o confirmar.
+- Pagos en efectivo, wallet/transferencia, débito y crédito, incluidos pagos mixtos. Importes internos expresados en centavos enteros y cálculo de vuelto en efectivo.
+- Sonidos opcionales de escaneo y caja registradora, con interruptores independientes.
+
+**Cuando no se encuentra un producto:** un código desconocido o una búsqueda sin resultados al dejar de escribir abre el diálogo **Producto no encontrado**, con dos opciones:
+
+| Botón | Acción |
+| --- | --- |
+| Agregar manualmente | Permite escribir el código de barras por teclado y buscarlo en el inventario |
+| Agregar nuevo | Abre el formulario de alta en Insumos; conserva el código buscado si es numérico |
+
+Registrar un nuevo producto conserva la compra pendiente. El alta no suma automáticamente unidades al carrito: una vez guardado, se agrega desde Caja. Editar productos existentes sigue bloqueado mientras hay una venta pendiente. Cerrar el diálogo no modifica la compra.
+
+### Pantalla del cliente y pago desde el celular
+
+- Ventana independiente con monitor seleccionable desde Ajustes.
+- Muestra productos e importe, y permite elegir **Solo QR, Solo alias o QR y alias**.
+- QR propio cargado desde PNG, JPG/JPEG o una página de PDF; Qt renderiza el PDF dentro de la aplicación. Alias ingresado como texto.
+- El cliente escanea el QR o escribe el alias en su wallet. Un QR estático puede requerir ingresar el importe en la app del cliente.
+- El cajero verifica la acreditación en la cuenta del comercio y marca la confirmación antes de completar una venta con wallet. Cambiar los importes desmarca esa verificación.
+- Después del cobro muestra total, medios y vuelto si corresponde; una venta íntegramente por wallet muestra **Cobrado OK**. Luego vuelve a la pantalla de bienvenida con los datos de pago.
+
+El POS registra el pago informado por el cajero: no procesa tarjetas, transmite importes a una wallet ni consulta automáticamente la acreditación. El alias es texto para ingresar en la app, no un código escaneable.
+
+### Arqueo: seguir el dinero de cada turno
+
+- Apertura de turno con saldo inicial de efectivo.
+- Registro de retiros de caja.
+- Totales esperados y declaración de importes por medio de pago al cerrar.
+- Cálculo de diferencias y detalle de cierres conservados localmente.
+- Relevo de caja/cajero después de cerrar el turno.
+
+Los lotes bancarios y la conciliación automática de tarjetas todavía están pendientes.
+
+### Insumos: productos, precios y existencias
+
+- Alta manual y edición de código, nombre, categoría, costo y precio de venta.
+- Búsqueda por nombre/código y filtro de categoría: Limpieza, Cigarrillos, Golosinas y Productos varios.
+- Stock en unidades, unidades por bulto y entrada de bultos completos con conversión a unidades.
+- Mínimo de stock y aviso de reposición en la interfaz al cobrar.
+- Fotos locales o ilustraciones predeterminadas de productos.
+- Confirmación antes de reemplazar un código existente; advierte que el anterior dejará de encontrar ese producto. Un código ya asignado a otro producto se rechaza con un aviso.
+
+### Catálogo de referencia Preciazo / SEPA
+
+El importador independiente admite archivos SQLite del formato antiguo de Preciazo y `productos.csv` de SEPA. Se accede desde **Insumos → Catálogo de referencia**.
+
+- Importación en segundo plano, cancelable, a un índice separado del inventario comercial.
+- Si falla o se cancela, conserva el catálogo anterior. Un import válido reemplaza solo el índice externo.
+- Consulta exacta por código de barras, conservando ceros iniciales.
+- Referencias con producto, precio, fuente y fecha. Para SEPA hay que declarar la fecha real del dataset.
+- Uso explícito del nombre/datos o del precio sugerido; no importa el costo ni las existencias de otra tienda.
+- Advertencia al aplicar datos de más de 30 días o sin fecha.
+- Alta manual siempre disponible. No requiere Internet después de importar.
+
+Los productos del catálogo externo deben darse de alta con precio y stock propios antes de venderse. No se incluyen datasets ni se descargan automáticamente datos o imágenes. Se conserva la foto local o ilustración del producto.
+
+**Créditos:** a **Nulo y los colaboradores de [Preciazo](https://github.com/catdevnull/preciazo)** por el proyecto usado como referencia de los formatos. No se copia su código ni se redistribuyen sus datos. No se encontró una licencia explícita en el árbol revisado; la licencia del POS no otorga permisos sobre datasets externos. Detalles de formatos, campos y procedencia en [PRECIAZO.md](docs/PRECIAZO.md).
+
+### Guardado local y copias
+
+Ventas, productos, stock, carrito, turnos y ajustes se guardan en **SQLite** al modificar. Una venta no se confirma en la interfaz si falla su guardado; se revierte también el estado en memoria. Una sesión desactualizada no puede sobrescribir cambios de otra.
+
+La ruta de `store.sqlite` aparece en Ajustes y queda fuera de la carpeta portable, en los datos de la aplicación del usuario. **Exportar copia** genera un backup SQLite consistente. El catálogo regenerable se guarda aparte como `reference.sqlite`. Fotos, logos y QR son archivos externos: conservá sus rutas y respaldalos por separado.
+
+Esta persistencia está diseñada para una sola PC. No compartas el archivo SQLite por LAN ni lo uses como servidor multicaja.
+
+Para restaurar una copia, cerrá todas las sesiones y conservá la base actual con sus archivos auxiliares. Colocá la copia como `store.sqlite` en una carpeta nueva e iniciá con `--data-dir RUTA`. Todavía no hay asistente de restauración en la interfaz.
+
+### Ajustes, tickets y ayuda
+
+- Nombre comercial, razón social, logo y ancho de papel 58/80 mm.
+- Vista previa del último ticket interno **no fiscal**. Impresión térmica todavía pendiente.
+- Configuración del monitor del cliente, QR/alias y sonidos.
+- Nombres de caja y cajero; roles y modo Principal/Secundaria/IP son campos ilustrativos.
+- Tutorial desde Ayuda, abierto dentro de la propia aplicación. No requiere abrir un PDF en el navegador.
+
+## Primeros pasos
+
+1. Iniciá la aplicación. Una base nueva tiene inventario vacío y turno cerrado.
+2. En Ajustes, ingresá los datos del comercio, caja y cajero.
+3. Registrá productos en Insumos, manualmente o tomando referencias del catálogo importado. Revisá código, presentación, precio, stock y unidades por bulto.
+4. En Arqueo, abrí el turno con el efectivo inicial real.
+5. En Caja, escaneá, escribí un código o usá la lupa. Elegí las cantidades y cobrá con los medios correspondientes.
+6. Para wallet, verificá la acreditación desde la cuenta del comercio antes de confirmar.
+7. Registrá retiros y cerrá el turno declarando los importes por cada medio. Revisá las diferencias.
+8. Exportá copias desde Ajustes y respaldá también fotos, logos y QR.
+
+## Ejecutar desde el código fuente
 
 Python 3.12 de 64 bits:
 
@@ -32,149 +117,47 @@ python -m pip install -r requirements.txt
 python run.py
 ```
 
-No requiere API de cobro. El cliente paga desde su app usando el QR/alias del comercio y el cajero verifica la acreditación.
+Para usar una carpeta de datos específica:
 
-## Compilar para Windows
+```sh
+python run.py --data-dir RUTA
+```
 
-Con Python 3.12 de 64 bits y el launcher `py` instalado, ejecutá **`Compilar-Windows.cmd`**. Crea un entorno local, instala las dependencias declaradas, ejecuta pruebas y genera:
+## Compilar y probar
 
-- `dist/PoStoreBaires/PoStoreBaires.exe` y bibliotecas Qt.
-- `dist/PoStoreBaires-1.0.0-beta.1-Windows.zip` portable.
-- Archivo de código fuente y `SHA256SUMS-Windows.txt`.
+En Windows, con Python 3.12 x64 y el launcher `py`, ejecutá **Compilar-Windows.cmd**. El resultado es un portable completo: conservá el ejecutable, `_internal`, recursos y licencias. El EXE no está firmado.
 
-El portable es una carpeta completa, no un EXE suelto: extraé todo el ZIP y conservá `_internal`, recursos y licencias. El EXE no está firmado. El build Windows debe hacerse en Windows; un build Linux no produce un ejecutable Windows.
-
-También se puede ejecutar manualmente:
+La compilación debe realizarse en el sistema operativo destino. Los comandos comunes son:
 
 ```sh
 python -m pip install -r requirements-build.txt
 python scripts/validate.py
 python -m unittest discover -s tests -p "test_*.py" -v
 python scripts/build.py
-python scripts/package.py
-```
-
-## Compilar y probar en Linux
-
-La distribución prevista usa Linux x86_64 con escritorio; el workflow compila sobre Ubuntu 22.04. No se promete compatibilidad con todas las distribuciones. En Debian/Ubuntu pueden requerirse bibliotecas Qt/X11 del sistema:
-
-```sh
-sudo apt-get install libegl1 libgl1 libopengl0 libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-shape0 libpulse0
-python -m pip install -r requirements-build.txt
-python -m unittest discover -s tests -p "test_*.py" -v
-python scripts/build.py
 python scripts/smoke.py
 python scripts/package.py
 ```
 
-Para ejecutar el paquete Linux publicado:
+Para Linux x86_64 con escritorio, el workflow utiliza Ubuntu 22.04. Bibliotecas de sistema y detalles de compilación en [README.md](README.md). El portable Linux se extrae completo del `tar.gz` y se inicia con `./PoStoreBaires/PoStoreBaires`.
 
-```sh
-tar -xzf PoStoreBaires-1.0.0-beta.1-Linux.tar.gz
-./PoStoreBaires/PoStoreBaires
-```
+El workflow [.github/workflows/beta-1.0.yml](.github/workflows/beta-1.0.yml) valida, prueba, compila y comprueba el arranque de los ejecutables Windows/Linux. Genera paquetes por plataforma, código fuente y hashes SHA-256. En los PR genera artifacts; la publicación de prerelease requiere la condición de publicación del workflow. No sobrescribe una release existente.
 
-Conservá toda la carpeta. `tar.gz` preserva permisos y enlaces de bibliotecas. No requiere Python instalado; sí un escritorio y bibliotecas de sistema compatibles. El build local probado en este entorno Linux no acredita por sí solo el build Ubuntu 22.04 de Actions.
+Consultá [Actions](https://github.com/DarkCristian/PoStoreBaires/actions) para el resultado de cada commit y [Releases](https://github.com/DarkCristian/PoStoreBaires/releases) para versiones publicadas. Un cambio en el PR no actualiza por sí solo los paquetes de una release anterior.
 
-## Workflow Beta 1.0 — ambos sistemas
+## Alcance y próximas etapas
 
-`.github/workflows/beta-1.0.yml` usa dos runners nativos: Windows x64 y Ubuntu 22.04 x64. Cada uno valida, prueba, compila con PyInstaller, inicia su ejecutable empaquetado y genera su archivo y SHA-256. Un tercer job empaqueta el código fuente. Los artifacts tienen nombres distintos por plataforma.
+La beta permite probar el flujo local. Todavía están pendientes:
 
-- Push/PR a `main` o ejecución manual sin marcar publicación: valida y genera artifacts.
-- Ejecución manual con `publish_prerelease` activado: compila ambos sistemas y publica la beta sobre el commit exacto del run, creando el tag si hace falta.
-- Push del tag `v1.0.0-beta.1`: espera **ambas compilaciones y el código fuente**, verifica checksums y crea un borrador de prerelease.
-- Solo después de subir Windows, Linux, fuente y SHA256SUMS.txt se hace público el prerelease. Si falla una compilación no se publica; si falla la subida, el borrador permanece privado para revisión.
-- No sobrescribe releases existentes ni usa una compilación antigua como si fuera nueva.
+- Servicio central en la PC principal y sincronización simultánea de cajas por LAN.
+- Autenticación, perfiles con permisos efectivos y sesiones de cajeros.
+- Impresión térmica, facturación fiscal y conciliación bancaria.
+- Consulta de productos/imágenes por Internet y actualización de datasets desde la interfaz.
+- Restauración guiada y validación operativa con hardware real.
 
-Archivos de prerelease previstos:
+Las pruebas automatizadas verifican dominio, persistencia, importación y widgets Qt en modo offscreen. No acreditan compatibilidad con un lector físico, la escaneabilidad de un QR, un segundo monitor o una impresora del comercio. Los datos del importador se prueban con fixtures sintéticos; no garantizan calidad ni actualidad de un dataset externo.
 
-| Archivo | Contenido |
-| --- | --- |
-| `PoStoreBaires-1.0.0-beta.1-Windows.zip` | Portable Windows x64 completo |
-| `PoStoreBaires-1.0.0-beta.1-Linux.tar.gz` | Portable Linux x64 completo |
-| `PoStoreBaires-1.0.0-beta.1-source.zip` | Código fuente, documentación, licencia y scripts |
-| `SHA256SUMS.txt` | Hashes de los tres archivos |
+## Documentación y licencia
 
-**Repositorio:** [DarkCristian/PoStoreBaires](https://github.com/DarkCristian/PoStoreBaires). Consultá [Actions](https://github.com/DarkCristian/PoStoreBaires/actions) para el estado de las compilaciones y [Releases](https://github.com/DarkCristian/PoStoreBaires/releases) para paquetes publicados. Un workflow escrito no equivale a una compilación exitosa.
+[Guía de uso](docs/GUIA.md) · [Catálogo Preciazo/SEPA](docs/PRECIAZO.md) · [Arquitectura](docs/ARCHITECTURE.md) · [Pruebas](docs/TESTING.md) · [Cambios](CHANGELOG.md) · [Seguridad](SECURITY.md) · [Componentes de terceros](THIRD_PARTY.md).
 
-## Documentación
-
-[Guía](docs/GUIA.md) · [Arquitectura](docs/ARCHITECTURE.md) · [Validación](docs/TESTING.md) · [Cambios](CHANGELOG.md) · [Seguridad](SECURITY.md).
-
-## Licencia
-
-Copyright (C) 2026 Cristian Carroccio. GPL-3.0-only, texto completo en [LICENSE](LICENSE). Libre uso, estudio, modificación y distribución bajo esa licencia, sin garantía. Ver [componentes de terceros](THIRD_PARTY.md). Las imágenes/QR del usuario no se incluyen en el proyecto.
-
-## Configuración paso a paso
-
-
-1. Ejecutá `python run.py` con las dependencias instaladas, o abrí `PoStoreBaires.exe` del portable Windows completo.
-2. El turno inicial contiene $10.000 de efectivo. Probá códigos 779001–779004. El lector debe emular teclado y enviar Enter.
-3. En Insumos creá/seleccioná productos. Editá costo, precio, mínimo, unidades por bulto y foto/ilustración. Ingresar bultos suma su conversión a unidades. No se editan productos con un carrito pendiente.
-4. En Ajustes ingresá nombre comercial, razón social, logo y papel. Último ticket es una vista previa interna no fiscal; no imprime.
-5. Cerrá el turno antes de cambiar caja/cajero; luego abrí otro con saldo inicial. Principal/Secundaria, IP y roles son ilustrativos.
-6. Activá la pantalla del cliente, elegí monitor y Solo QR, Solo alias o QR y alias. Cargá la imagen o PDF y seleccioná página. Vista previa permite revisar el QR. Qt convierte PDF sin un visor externo.
-7. En la pantalla del cliente QR/alias están visibles durante la compra junto a productos y total. El cliente paga desde su app. Un alias se ingresa como texto. Un QR estático puede requerir cargar el importe manualmente en la app.
-8. En Cobrar distribuí efectivo recibido, wallet, débito y crédito. Cobrar por wallet asigna todo a wallet si no se ingresó importe en ese medio. Los cambios se reflejan en la pantalla del cliente.
-9. Verificá la acreditación desde la cuenta del comercio y marcá la casilla para confirmar. Cambiar importes desmarca esa verificación. No hay API ni validación automática.
-10. La venta confirmada muestra total y medios; efectivo muestra vuelto. Wallet íntegra muestra Cobrado OK. Después de 12 segundos vuelve a bienvenida con QR/alias.
-11. Sonidos independientes en Ajustes: bip al agregar y caja registradora al confirmar. Probar permite escucharlos antes de guardar.
-12. Arqueo: registrá retiros, cerrá con los declarados por medio y consultá diferencias en Detalle. El esperado de efectivo incluye inicial, cobros y retiros. Lotes bancarios de tarjetas pendientes.
-
-Al cerrar se pierde toda la sesión. Las imágenes y QR se leen desde sus archivos: no los muevas mientras usás la beta. No hay persistencia, red real ni uso productivo.
-
-## Arquitectura y próximas etapas
-
-
-## Beta 1.0 actual
-
-Aplicación nativa Python/PySide6-Qt con estado en memoria. Un único turno activo y múltiples registros de cierres durante la sesión. No existe conexión entre máquinas.
-
-El dominio separa validación de pago/stock de la interfaz. Importes en centavos enteros; pagos insuficientes, excedentes no efectivos y wallet no verificada se rechazan antes de modificar inventario. La pantalla del cliente es un QWidget independiente; PDF se renderiza con QtPdf y el audio con QSoundEffect.
-
-## Producción planificada
-
-- Cliente de escritorio Qt/PySide. Base PostgreSQL y servicio central en la PC principal.
-- Principal también puede vender; rol administrador independiente del modo de equipo.
-- Cajas secundarias se conectan al servicio por LAN. Sin acceso compartido directo a archivos de base.
-- Ventas, pagos y stock confirmados en una transacción central con claves de idempotencia y control de concurrencia.
-- Autenticación y permisos Administrador/Supervisor/Cajero aplicados en el servidor.
-- Turnos por caja, relevo explícito y trazabilidad de anulaciones/ajustes.
-- Sin Internet puede seguir la operación LAN; sin servidor se bloquea la confirmación y se conserva carrito.
-- Tickets térmicos, ajustes de logo/razón social, perfiles de impresora 58/80 mm.
-- Facturación fiscal y procesamiento/validación automática de wallets como módulos separados.
-- Búsqueda opcional por EAN, con fuente/fecha, alta manual siempre disponible. Nunca actualizar precios automáticamente desde una referencia externa.
-- Copias de seguridad y restauración comprobadas antes del uso productivo.
-
-No hay fechas prometidas para estas etapas. La próxima entrega debe priorizar persistencia y pruebas transaccionales antes de multicaja o integraciones.
-
-## Validación y límites de las pruebas
-
-
-## Automática
-
-`python scripts/validate.py` comprueba sintaxis, versión, licencia y recursos.
-`python -m unittest discover -s tests -p "test_*.py" -v` prueba importes decimales, pagos exactos/mixtos, vuelto, rechazos atómicos, stock, arqueo, relevo, códigos con ceros, configuración wallet y widgets Qt en modo offscreen. Incluye QR visible antes del cobro, alias, importe mixto, desmarcado de verificación, resultado y renderizado de página PDF.
-
-El build usa PyInstaller onedir en el sistema operativo destino. `PoStoreBaires --smoke-test` inicia la aplicación y carga un producto, sin entrar en la confirmación de salida. El workflow Windows ejecuta ese smoke-test contra el EXE empaquetado. El build local Linux prueba un ejecutable Linux; no valida el EXE Windows.
-
-## Manual por plataforma
-
-- Escaneo por lector físico, atajos y foco de entrada.
-- Cobros efectivo, mixto y wallet verificada; errores no alteran stock.
-- Arqueo, retiros, cierres/relevo y detalle por medio.
-- Imagen y PDF reales de QR: proporciones y lectura desde una app del celular.
-- Segundo monitor, escala y resolución del comercio.
-- Dispositivo de audio y ambos interruptores.
-- Apertura del portable extraído completo sin Python instalado.
-- Logo en ticket/vista previa. No implica prueba de impresión (todavía pendiente).
-
-Estas pruebas manuales siguen pendientes; los tests offscreen no prueban lectores, monitores, audio, escaneabilidad del QR ni funcionamiento de una wallet.
-
-## Resultado de esta preparación
-
-- 15 tests de dominio, UI Qt y control de publicación aprobados (revalidación en esta actualización).
-- Arranque y carrito comprobados en Qt offscreen.
-- Build PyInstaller generado en Linux y ejecutable empaquetado probado con `--smoke-test`, con salida correcta.
-- Se corrigió el diálogo de confirmación de salida para que no bloquee el smoke-test.
-- Build nativo y arranque de ejecutables Windows/Linux aprobados en [GitHub Actions](https://github.com/DarkCristian/PoStoreBaires/actions/runs/39663807821). Las pruebas manuales de hardware siguen pendientes.
+Copyright (C) 2026 Cristian Carroccio. **GPL-3.0-only**, texto completo en [LICENSE](LICENSE). Permite usar, estudiar, modificar y redistribuir conforme a esa licencia, sin garantía. Las imágenes y QR del usuario no se incluyen en el proyecto. La maqueta HTA previa se conserva en `prototypes/hta/`; el código activo utiliza Qt nativo.

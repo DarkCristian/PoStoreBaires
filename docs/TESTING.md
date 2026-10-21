@@ -27,3 +27,7 @@ Estas pruebas manuales siguen pendientes; los tests offscreen no prueban lectore
 - Build PyInstaller generado en Linux y ejecutable empaquetado probado con `--smoke-test`, con salida correcta.
 - Se corrigió el diálogo de confirmación de salida para que no bloquee el smoke-test.
 - Build nativo y arranque de ejecutables Windows/Linux aprobados en [GitHub Actions](https://github.com/DarkCristian/PoStoreBaires/actions/runs/39663807821). Las pruebas manuales de hardware siguen pendientes.
+
+## Persistencia y catálogo (sin publicar)
+
+Pruebas con SQLite temporal y filas sintéticas: reapertura de ventas/carrito/stock/turnos/ajustes, rollback ante fallo de disco, conflicto de revisión, copia independiente, base dañada sin reinicio, importación de centavos/fechas/ceros iniciales, indicador EAN de SEPA, precio por presentación, cancelación y conservación del catálogo anterior. No acreditan acceso a una API ni calidad/actualidad de un dataset real.

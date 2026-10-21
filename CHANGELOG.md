@@ -1,5 +1,20 @@
 # Cambios
 
+## 1.0.0-beta.2
+
+- Aviso de producto no encontrado con entrada manual o alta en Insumos conservando la compra.
+- Créditos de Preciazo y confirmación al reemplazar un código.
+- Presentación y guía actualizadas en main.md.
+
+- Botón de lupa en Caja: búsqueda por nombre/código del inventario local, selección y agregado a la compra con validación de stock y turno.
+
+- Persistencia SQLite local de ventas, stock, carrito, turnos y ajustes, con rollback ante fallo y rechazo de sesiones desactualizadas.
+- Exportación de copias SQLite desde Ajustes; primer inicio vacío y turno cerrado.
+- Catálogo independiente compatible con SQLite antiguo de Preciazo y CSV SEPA, sin datos ni código upstream incluidos.
+- Consulta exacta por código, fuente/fecha y aplicación manual del nombre o precio; costo y stock no se importan.
+- Importación en segundo plano, cancelable y atómica; imágenes externas sin descarga automática.
+
+
 ## 1.0.0-beta.1 — PoStoreBaires
 
 - Nombre de producto y repositorio previsto: PoStoreBaires.

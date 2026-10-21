@@ -1,12 +1,30 @@
 """SPDX-License-Identifier: GPL-3.0-only
 Copyright (C) 2026 Cristian Carroccio.
 
-In-memory beta. Money uses integer cents; no external payment processing.
+Local state. Money uses integer cents; no external payment processing.
 """
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 import re
+from functools import wraps
+
+def durable(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        if self.repository is None:
+            return method(self, *args, **kwargs)
+        from .storage import snapshot, restore
+        before = snapshot(self)
+        try:
+            result = method(self, *args, **kwargs)
+            self.repository.save(self)
+            return result
+        except Exception:
+            restore(self, before)
+            raise
+    return wrapped
+
 
 METHODS = ("Efectivo", "Wallet / transferencia", "Débito", "Crédito")
 CATEGORIES = ("Limpieza", "Cigarrillos", "Golosinas", "Productos varios")
@@ -43,6 +61,7 @@ class Product:
     minimum: int = 5
     illustration: str = "box"
     photo: str = ""
+    reference: dict = field(default_factory=dict)
 
 @dataclass
 class Config:
@@ -94,6 +113,7 @@ class Store:
     opening: int = 1_000_000
     withdrawals: int = 0
     turn_start: int = 0
+    repository: object = field(default=None, repr=False, compare=False)
 
     @classmethod
     def demo(cls):
@@ -107,6 +127,7 @@ class Store:
     def total(self):
         return sum(self.products[i].price * q for i, q in self.cart.items())
 
+    @durable
     def add(self, index):
         if not self.opened:
             raise ValueError("Abrí un turno desde Arqueo.")
@@ -123,8 +144,9 @@ class Store:
                 return i
         raise KeyError(code)
 
+    @durable
     def save_product(self, product, index=None):
-        if self.cart:
+        if self.cart and index is not None:
             raise ValueError("Terminá o vaciá la venta antes de editar productos.")
         if not product.name.strip() or not product.code.strip():
             raise ValueError("Completá nombre y código.")
@@ -140,6 +162,7 @@ class Store:
         else:
             self.products[index] = product
 
+    @durable
     def complete(self, payments, verified=False):
         if not self.opened or not self.cart:
             raise ValueError("La venta está vacía o el turno está cerrado.")
@@ -177,11 +200,13 @@ class Store:
         totals[0] += self.opening - self.withdrawals
         return totals
 
+    @durable
     def withdraw(self, value):
         if not self.opened or value <= 0 or value > self.expected()[0]:
             raise ValueError("Retiro inválido o superior al efectivo esperado.")
         self.withdrawals += value
 
+    @durable
     def close_turn(self, declared):
         if not self.opened or self.cart:
             raise ValueError("El turno está cerrado o hay una venta pendiente.")
@@ -198,6 +223,7 @@ class Store:
         self.opened = False
         return result
 
+    @durable
     def open_turn(self, value):
         if self.opened:
             raise ValueError("Ya hay un turno abierto.")
@@ -206,6 +232,7 @@ class Store:
         self.opening = value
         self.opened = True
 
+    @durable
     def configure(self, cfg):
         if not cfg.shop.strip() or not cfg.box.strip() or not cfg.cashier.strip():
             raise ValueError("Completá comercio, caja y cajero.")
@@ -214,3 +241,24 @@ class Store:
         if cfg.customer_enabled and not cfg.wallet_ready():
             raise ValueError("Completá QR, alias o ambos según la opción elegida.")
         self.config = cfg
+
+    @durable
+    def change_quantity(self, index, delta):
+        if index not in self.cart:raise ValueError("Producto no incluido en la venta.")
+        quantity=self.cart[index]+delta
+        if quantity>self.products[index].stock:raise ValueError("Stock insuficiente.")
+        if quantity<=0:del self.cart[index]
+        else:self.cart[index]=quantity
+
+    @durable
+    def remove(self,index):
+        self.cart.pop(index,None)
+
+    @durable
+    def clear(self):
+        self.cart.clear()
+
+    @durable
+    def receive(self,index,packs):
+        if type(packs) is not int or packs<1:raise ValueError("Cantidad de bultos inválida.")
+        self.products[index].stock+=packs*self.products[index].pack

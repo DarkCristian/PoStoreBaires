@@ -1,3 +1,4 @@
+from postorebaires.sqlite_utils import connect
 from pathlib import Path
 from threading import Event
 import csv
@@ -14,7 +15,7 @@ class CatalogImport(unittest.TestCase):
     def tearDown(self):self.temp.cleanup()
     def legacy(self):
         path=self.root/'legacy.sqlite'
-        with sqlite3.connect(path) as con:
+        with connect(path) as con:
             con.execute('CREATE TABLE precios(ean TEXT,name TEXT,precio_centavos INTEGER,fetched_at INTEGER,url TEXT,image_url TEXT)')
             con.executemany('INSERT INTO precios VALUES (?,?,?,?,?,?)',[
                 ('00012345','Producto de prueba',12550,1767225600,'https://example.invalid/item','https://example.invalid/image.jpg'),
@@ -67,7 +68,7 @@ class CatalogImport(unittest.TestCase):
 
     def test_views_are_not_treated_as_source_tables(self):
         path=self.root/'view.sqlite'
-        with sqlite3.connect(path) as c:c.execute("CREATE VIEW precios AS SELECT 'bad' AS ean")
+        with connect(path) as c:c.execute("CREATE VIEW precios AS SELECT 'bad' AS ean")
         with self.assertRaises(ValueError):self.catalog.import_file(path)
 
     def test_no_match_is_not_a_new_product_or_synthetic_price(self):

@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import sqlite3
 from .domain import Store, Config, Product, Sale
+from .sqlite_utils import connect
+from contextlib import contextmanager
 
 SCHEMA = 1
 
@@ -29,11 +31,12 @@ class LocalStore:
         with self.connection() as con:
             con.execute('CREATE TABLE IF NOT EXISTS store_state (id INTEGER PRIMARY KEY CHECK(id=1), schema_version INTEGER NOT NULL, revision INTEGER NOT NULL, payload TEXT NOT NULL)')
 
+    @contextmanager
     def connection(self):
-        con=sqlite3.connect(self.path,timeout=5)
-        con.execute('PRAGMA journal_mode=WAL')
-        con.execute('PRAGMA synchronous=FULL')
-        return con
+        with connect(self.path,timeout=5) as con:
+            con.execute('PRAGMA journal_mode=WAL')
+            con.execute('PRAGMA synchronous=FULL')
+            yield con
 
     def load(self):
         try:
@@ -67,5 +70,5 @@ class LocalStore:
     def backup(self, destination):
         dest=Path(destination).resolve()
         if dest==self.path:raise ValueError('Elegí otro archivo para la copia.')
-        with self.connection() as source, sqlite3.connect(dest) as target:
+        with self.connection() as source, connect(dest) as target:
             source.backup(target)

@@ -8,6 +8,7 @@ import csv
 import re
 import sqlite3
 from .domain import amount
+from .sqlite_utils import connect
 
 UPSTREAM = 'https://github.com/catdevnull/preciazo'
 
@@ -54,17 +55,17 @@ class Catalog:
     def __init__(self,path):
         self.path=Path(path).resolve()
         self.path.parent.mkdir(parents=True,exist_ok=True)
-        with sqlite3.connect(self.path) as con:
+        with connect(self.path) as con:
             con.execute('CREATE TABLE IF NOT EXISTS refs (ean TEXT NOT NULL,name TEXT NOT NULL,price INTEGER,observed TEXT NOT NULL,source TEXT NOT NULL,url TEXT NOT NULL,image_url TEXT NOT NULL,brand TEXT NOT NULL,presentation TEXT NOT NULL)')
             con.execute('CREATE INDEX IF NOT EXISTS refs_ean ON refs(ean,observed)')
 
     def count(self):
-        with sqlite3.connect(self.path) as con:
+        with connect(self.path) as con:
             return con.execute('SELECT count(*) FROM refs').fetchone()[0]
 
     def lookup(self,ean):
         ean=barcode(ean)
-        with sqlite3.connect(self.path) as con:
+        with connect(self.path) as con:
             rows=con.execute('SELECT * FROM refs WHERE ean=? ORDER BY observed DESC, price IS NULL, price ASC LIMIT 50',(ean,)).fetchall()
         return [Reference(*r) for r in rows]
 
@@ -78,7 +79,7 @@ class Catalog:
         observed=observation(observed)
         iterator=self._legacy(path,source) if sqlite else self._sepa(path,source,observed)
         imported=skipped=0
-        with sqlite3.connect(self.path,timeout=5) as con:
+        with connect(self.path,timeout=5) as con:
             con.execute('BEGIN IMMEDIATE')
             con.execute('CREATE TEMP TABLE incoming AS SELECT * FROM refs WHERE 0')
             for record in iterator:

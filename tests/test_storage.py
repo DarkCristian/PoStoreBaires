@@ -1,3 +1,4 @@
+from postorebaires.sqlite_utils import connect
 from dataclasses import replace
 from pathlib import Path
 import sqlite3
@@ -67,9 +68,9 @@ class Persistence(unittest.TestCase):
         self.assertEqual(restored.products[0].stock,9)
 
     def test_corrupt_payload_does_not_reset_data(self):
-        with sqlite3.connect(self.path) as c:c.execute("UPDATE store_state SET payload='not json'")
+        with connect(self.path) as c:c.execute("UPDATE store_state SET payload='not json'")
         with self.assertRaises(ValueError):LocalStore(self.path).load()
-        with sqlite3.connect(self.path) as c:self.assertEqual(c.execute('SELECT payload FROM store_state').fetchone()[0],'not json')
+        with connect(self.path) as c:self.assertEqual(c.execute('SELECT payload FROM store_state').fetchone()[0],'not json')
 
     def test_first_database_is_empty_not_a_demo(self):
         empty=LocalStore(Path(self.temp.name)/'empty.sqlite').load()

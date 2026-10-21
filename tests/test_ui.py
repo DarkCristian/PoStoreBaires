@@ -1,3 +1,4 @@
+from postorebaires.sqlite_utils import connect
 import os
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import tempfile
@@ -76,7 +77,7 @@ class NativeUI(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             import sqlite3
             source=Path(folder)/'source.sqlite'
-            with sqlite3.connect(source) as con:
+            with connect(source) as con:
                 con.execute('CREATE TABLE precios(ean TEXT,name TEXT,precio_centavos INTEGER,fetched_at INTEGER)')
                 con.execute("INSERT INTO precios VALUES ('00012345','Referencia',12550,1767225600)")
             self.window.catalog=Catalog(Path(folder)/'catalog.sqlite')

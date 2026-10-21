@@ -184,3 +184,7 @@ Estas pruebas manuales siguen pendientes; los tests offscreen no prueban lectore
 Ver [Preciazo / SEPA](docs/PRECIAZO.md) para importar un catálogo por código de barras. La búsqueda es local; no se incluye una base ni se consulta una API de Internet. Los precios son referencias con fecha y fuente, aplicadas solo por decisión del usuario.
 
 La ruta de `store.sqlite` aparece en Ajustes; está fuera del portable, en los datos de la aplicación del usuario. Exportar copia usa el mecanismo de backup de SQLite e incluye el estado confirmado. No compartas ese archivo por LAN: esta persistencia es para una sola PC. Para restaurar, cerrá todas las sesiones, conservá aparte la base actual y sus archivos auxiliares, y colocá la copia como `store.sqlite` en una carpeta nueva; iniciá con `--data-dir RUTA`. Fotos, logos y QR requieren copia aparte.
+
+### Buscar productos al vender
+
+En Caja, el botón **Buscar** con lupa junto al código abre un buscador dentro de la aplicación. Filtra por nombre o código mientras escribís y muestra precio y unidades disponibles descontando el carrito. Seleccioná un resultado y presioná **Agregar a la compra**, Enter en la búsqueda o doble clic para sumar una unidad. Cancelar no modifica la venta. Incluye todos los productos guardados en el inventario local, tanto manuales como creados a partir de una referencia. El catálogo externo no se vende directamente: primero requiere alta en Insumos con precio y stock propios. Se mantienen las validaciones de turno abierto, stock y guardado en disco.

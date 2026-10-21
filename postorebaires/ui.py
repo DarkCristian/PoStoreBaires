@@ -368,6 +368,69 @@ class ProductDialog(QDialog):
 
 
 
+class ProductSearchDialog(QDialog):
+    """Select only sellable products registered in the local commerce inventory."""
+    def __init__(self, parent, query=""):
+        super().__init__(parent)
+        self.main = parent
+        self.indices = []
+        self.setWindowTitle("PoStoreBaires · Buscar producto para la compra")
+        self.resize(780, 500)
+        layout = QVBoxLayout(self)
+        self.query = QLineEdit()
+        self.query.setPlaceholderText("Buscar por nombre o código de barras")
+        self.query.setClearButtonEnabled(True)
+        layout.addWidget(self.query)
+        self.results = table(["Producto", "Código", "Precio", "Disponible"])
+        layout.addWidget(self.results)
+        self.message = QLabel()
+        self.message.setTextFormat(Qt.TextFormat.PlainText)
+        self.message.setWordWrap(True)
+        layout.addWidget(self.message)
+        row = QHBoxLayout()
+        self.add_button = button("Agregar a la compra", self.add_selected, True)
+        row.addWidget(self.add_button)
+        row.addWidget(button("Cancelar", self.reject))
+        layout.addLayout(row)
+        self.query.textChanged.connect(self.refresh_results)
+        self.query.returnPressed.connect(self.add_selected)
+        self.results.cellDoubleClicked.connect(lambda *_: self.add_selected())
+        self.query.setText(query)
+        self.refresh_results()
+        self.query.setFocus()
+
+    def refresh_results(self):
+        terms = self.query.text().strip().casefold().split()
+        store = self.main.store
+        self.indices = [i for i, p in enumerate(store.products)
+                        if all(term in (p.name + " " + p.code).casefold() for term in terms)]
+        fill(self.results, [(store.products[i].name, store.products[i].code,
+                             money(store.products[i].price),
+                             max(0, store.products[i].stock - store.cart.get(i, 0)))
+                            for i in self.indices])
+        self.add_button.setEnabled(bool(self.indices))
+        if self.indices:
+            self.results.selectRow(0)
+            self.message.setText("Elegí un producto. Enter o doble clic agrega una unidad a la compra.")
+        else:
+            self.message.setText("Sin coincidencias en el inventario del comercio. Cargá el producto desde Insumos.")
+
+    def add_selected(self):
+        row = self.results.currentRow()
+        if not 0 <= row < len(self.indices):
+            return
+        try:
+            self.main.store.add(self.indices[row])
+        except (ValueError, IndexError) as e:
+            self.message.setText(str(e))
+            return
+        self.main.clear_result()
+        self.main.refresh()
+        self.main.play_sound("scan")
+        self.main.scan_input.clear()
+        self.accept()
+
+
 class CustomerWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -572,12 +635,17 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(w)
         frame, left = panel()
         left.addWidget(label("Nueva venta", "title"))
-        left.addWidget(label("Escaneá un código. Ejemplos: 779001 · 779002 · 779003 · 779004"))
+        left.addWidget(label("Escaneá o ingresá un código, o usá la lupa para buscar por nombre."))
         row = QHBoxLayout()
         self.scan_input = QLineEdit()
         self.scan_input.setPlaceholderText("Código de barras + Enter")
         self.scan_input.returnPressed.connect(self.scan)
         row.addWidget(self.scan_input)
+        self.search_product_button = button("Buscar", self.search_purchase_product)
+        self.search_product_button.setIcon(QIcon(str(ASSETS / "search.svg")))
+        self.search_product_button.setToolTip("Buscar un producto por nombre o código para agregarlo a la compra")
+        self.search_product_button.setAccessibleName("Buscar producto para la compra")
+        row.addWidget(self.search_product_button)
         row.addWidget(button("Agregar", self.scan, True))
         left.addLayout(row)
         self.cart_table = table(["Producto", "Cantidad", "Precio", "Subtotal"])
@@ -693,6 +761,10 @@ class MainWindow(QMainWindow):
             self.scan_input.setFocus()
         except ValueError as e:
             self.notify(str(e))
+
+    def search_purchase_product(self):
+        ProductSearchDialog(self, self.scan_input.text().strip()).exec()
+        self.scan_input.setFocus()
 
     def scan(self):
         code = self.scan_input.text().strip()

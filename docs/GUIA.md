@@ -16,3 +16,7 @@
 Ventas, stock, carrito, turnos y ajustes se guardan localmente en SQLite. Exportá una copia desde Ajustes. Las imágenes y QR se leen desde sus archivos: no los muevas mientras usás la beta. No hay sincronización multicaja ni autenticación. Ver [catálogo Preciazo/SEPA](PRECIAZO.md).
 
 Podés editar códigos y precios propios desde Insumos, sin una venta pendiente. Cambiar el código de un producto existente solicita confirmación antes de guardar; el anterior deja de encontrarlo. Si el nuevo código ya pertenece a otro producto, se rechaza con un aviso. La guía se abre dentro de la aplicación desde Ayuda. El archivo de documentación del catálogo también está disponible en el repositorio.
+
+### Buscar productos al vender
+
+En Caja, el botón **Buscar** con lupa junto al código abre un buscador dentro de la aplicación. Filtra por nombre o código mientras escribís y muestra precio y unidades disponibles descontando el carrito. Seleccioná un resultado y presioná **Agregar a la compra**, Enter en la búsqueda o doble clic para sumar una unidad. Cancelar no modifica la venta. Incluye todos los productos guardados en el inventario local, tanto manuales como creados a partir de una referencia. El catálogo externo no se vende directamente: primero requiere alta en Insumos con precio y stock propios. Se mantienen las validaciones de turno abierto, stock y guardado en disco.

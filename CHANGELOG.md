@@ -2,6 +2,8 @@
 
 ## Sin publicar
 
+- Botón de lupa en Caja: búsqueda por nombre/código del inventario local, selección y agregado a la compra con validación de stock y turno.
+
 - Persistencia SQLite local de ventas, stock, carrito, turnos y ajustes, con rollback ante fallo y rechazo de sesiones desactualizadas.
 - Exportación de copias SQLite desde Ajustes; primer inicio vacío y turno cerrado.
 - Catálogo independiente compatible con SQLite antiguo de Preciazo y CSV SEPA, sin datos ni código upstream incluidos.

@@ -7,7 +7,7 @@ import unittest
 from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtGui import QPixmap, QColor, QPdfWriter, QPainter
 from PySide6.QtCore import Qt
-from postorebaires.ui import MainWindow, PaymentDialog, SettingsDialog, STYLE, load_image, ProductDialog
+from postorebaires.ui import MainWindow, PaymentDialog, SettingsDialog, STYLE, load_image, ProductDialog, ProductSearchDialog
 
 class NativeUI(unittest.TestCase):
     @classmethod
@@ -119,6 +119,48 @@ class NativeUI(unittest.TestCase):
             d.save()
         self.assertEqual(w.store.products[0].code,'00012345')
         self.assertFalse(any(p.code == original for p in w.store.products))
+        d.deleteLater()
+
+    def test_purchase_search_filters_and_adds_registered_products(self):
+        from postorebaires.storage import LocalStore
+        from postorebaires.domain import Product
+        with tempfile.TemporaryDirectory() as folder:
+            repo=LocalStore(Path(folder)/'store.sqlite')
+            store=repo.load()
+            store.save_product(Product('00012345','Producto manual especial','Productos varios',12300,stock=2))
+            store.save_product(Product('00012346','Producto con referencia','Productos varios',45600,stock=1,reference={'source':'Prueba'}))
+            store.open_turn(0)
+            self.window.store=LocalStore(repo.path).load()
+            d=ProductSearchDialog(self.window,'MANUAL especial')
+            self.assertEqual(d.results.rowCount(),1)
+            d.add_selected()
+            self.assertEqual(d.result(),QDialog.DialogCode.Accepted)
+            self.assertEqual(LocalStore(repo.path).load().cart,{0:1})
+            self.assertEqual(self.window.store.products[0].stock,2)
+            d.deleteLater()
+            d=ProductSearchDialog(self.window,'00012346')
+            self.assertEqual(d.results.rowCount(),1)
+            d.reject()
+            self.assertEqual(self.window.store.cart,{0:1})
+            d.deleteLater()
+            d=ProductSearchDialog(self.window,'no existe')
+            self.assertFalse(d.add_button.isEnabled())
+            d.add_selected()
+            self.assertEqual(self.window.store.cart,{0:1})
+            d.deleteLater()
+
+    def test_purchase_search_rejects_stock_and_closed_turn(self):
+        w=self.window
+        w.store.products[0].stock=1
+        d=ProductSearchDialog(w,'779001')
+        self.assertEqual(d.results.item(0,3).text(),'0')
+        d.add_selected()
+        self.assertIn('Stock insuficiente',d.message.text())
+        self.assertEqual(w.store.cart,{0:1})
+        w.store.opened=False
+        d.add_selected()
+        self.assertIn('Abrí un turno',d.message.text())
+        self.assertEqual(d.result(),QDialog.DialogCode.Rejected)
         d.deleteLater()
 
     def test_settings_and_tables_create(self):

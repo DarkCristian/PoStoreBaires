@@ -80,7 +80,8 @@ Conservá toda la carpeta. `tar.gz` preserva permisos y enlaces de bibliotecas. 
 
 `.github/workflows/beta-1.0.yml` usa dos runners nativos: Windows x64 y Ubuntu 22.04 x64. Cada uno valida, prueba, compila con PyInstaller, inicia su ejecutable empaquetado y genera su archivo y SHA-256. Un tercer job empaqueta el código fuente. Los artifacts tienen nombres distintos por plataforma.
 
-- Push/PR a `main` o ejecución manual: valida y genera artifacts, sin publicar releases.
+- Push/PR a `main` o ejecución manual sin marcar publicación: valida y genera artifacts.
+- Ejecución manual con `publish_prerelease` activado: compila ambos sistemas y publica la beta sobre el commit exacto del run, creando el tag si hace falta.
 - Push del tag `v1.0.0-beta.1`: espera **ambas compilaciones y el código fuente**, verifica checksums y crea un borrador de prerelease.
 - Solo después de subir Windows, Linux, fuente y SHA256SUMS.txt se hace público el prerelease. Si falla una compilación no se publica; si falla la subida, el borrador permanece privado para revisión.
 - No sobrescribe releases existentes ni usa una compilación antigua como si fuera nueva.

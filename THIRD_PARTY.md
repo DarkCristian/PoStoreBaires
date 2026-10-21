@@ -17,3 +17,5 @@ Los QR, logos y fotos que seleccione el usuario no se incluyen en el código ni 
 ## Compatibilidad Preciazo / SEPA
 
 El importador propio documentado en [PRECIAZO.md](docs/PRECIAZO.md) lee formatos del proyecto [Preciazo](https://github.com/catdevnull/preciazo). No incluye código ni datos de ese repositorio y no es una dependencia de ejecución. La revisión indicada no mostró una licencia explícita; los permisos del dataset deben verificarse por separado antes de usarlo o redistribuirlo.
+
+Créditos: **Nulo y colaboradores de [catdevnull/preciazo](https://github.com/catdevnull/preciazo)**, proyecto de referencia para los formatos del catálogo de supermercados argentinos.

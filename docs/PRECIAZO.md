@@ -30,3 +30,5 @@ ZIP, tar.zst, PostgreSQL y Parquet no se importan directamente. Primero se neces
 Las URLs HTTPS se guardan como metadatos, sin descargar imágenes. Se conserva la ilustración o foto local del producto. El índice `reference.sqlite` queda separado de `store.sqlite` en la carpeta de datos del usuario. La copia comercial exportada no incluye el índice regenerable ni archivos de fotos/QR.
 
 Consultar también `db-datos/schema.js`, `rust/src/api/main.rs` y `sepa/db/schema.ts` del repositorio de referencia para contrastar los formatos; no se presupone que exista un servicio público estable.
+
+Créditos: **Nulo y colaboradores de [catdevnull/preciazo](https://github.com/catdevnull/preciazo)**, proyecto de referencia para los formatos del catálogo de supermercados argentinos.

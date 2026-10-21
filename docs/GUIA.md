@@ -14,3 +14,5 @@
 12. Arqueo: registrá retiros, cerrá con los declarados por medio y consultá diferencias en Detalle. El esperado de efectivo incluye inicial, cobros y retiros. Lotes bancarios de tarjetas pendientes.
 
 Ventas, stock, carrito, turnos y ajustes se guardan localmente en SQLite. Exportá una copia desde Ajustes. Las imágenes y QR se leen desde sus archivos: no los muevas mientras usás la beta. No hay sincronización multicaja ni autenticación. Ver [catálogo Preciazo/SEPA](PRECIAZO.md).
+
+Podés editar códigos y precios propios desde Insumos, sin una venta pendiente. Cambiar el código de un producto existente solicita confirmación antes de guardar; el anterior deja de encontrarlo. Si el nuevo código ya pertenece a otro producto, se rechaza con un aviso. La guía se abre dentro de la aplicación desde Ayuda. El archivo de documentación del catálogo también está disponible en el repositorio.

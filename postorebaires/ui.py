@@ -305,6 +305,18 @@ class ProductDialog(QDialog):
             p = Product(self.code.text().strip(), self.name.text().strip(), self.category.currentText(),
                         amount(self.price.text()), amount(self.cost.text()), self.stock.value(), self.pack.value(),
                         self.minimum.value(), self.illustration.currentText(), self.photo.path(), dict(self.reference))
+            if self.index is not None and p.code != self.store.products[self.index].code:
+                if any(other.code == p.code and i != self.index for i, other in enumerate(self.store.products)):
+                    raise ValueError("Código duplicado. Ya pertenece a otro producto.")
+                old_code = self.store.products[self.index].code
+                answer = QMessageBox.question(
+                    self, "Confirmar cambio de código",
+                    f"Vas a cambiar el código de {old_code} a {p.code}.\n"
+                    "El código anterior dejará de encontrar este producto. ¿Guardar el cambio?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No)
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
             self.store.save_product(p, self.index)
             self.accept()
         except ValueError as e:
@@ -911,6 +923,7 @@ HELP = """
 <h2>Sonidos</h2><p>Activá bip y caja registradora por separado en Ajustes. Los botones Probar permiten escucharlos. Los WAV son originales y están incluidos.</p>
 <h2>Arqueo y relevo</h2><p>Registrá retiros de efectivo. Cerrá declarando lo contado/verificado por cada medio. Revisá diferencias por separado en el detalle. El saldo inicial y los retiros afectan solo efectivo. Lotes bancarios de tarjetas pendientes.</p>
 <h2>Base local y copias</h2><p>Ventas, productos, stock, turnos, carrito y ajustes se guardan en SQLite al modificar. La base está en la carpeta de datos de la aplicación del usuario, fuera del portable. Consultá su ruta y exportá una copia desde Ajustes. No sincroniza cajas ni verifica permisos. No abrir la misma base desde dos sesiones: los conflictos se rechazan.</p>
+<h2>Créditos</h2><p>Preciazo: Nulo y colaboradores de catdevnull/preciazo (https://github.com/catdevnull/preciazo). Referencia para los formatos del catálogo; no incluye código ni datos externos.</p>
 <h2>Catálogo Preciazo / SEPA</h2><p>En Insumos abrí Catálogo de referencia e importá un SQLite antiguo de Preciazo o productos.csv SEPA. Para CSV ingresá la fecha real del dataset. Se reemplaza solo el catálogo externo. Buscá desde el código en el alta/edición; elegí explícitamente usar nombre o precio. No cambia costo ni stock. Se muestra fuente/fecha; las imágenes externas no se descargan y se conserva la ilustración por defecto. No se incluyen datos ni código de Preciazo.</p>
 """
 

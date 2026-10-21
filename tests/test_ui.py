@@ -96,6 +96,31 @@ class NativeUI(unittest.TestCase):
             self.assertEqual(d.stock.value(),7)
             d.deleteLater()
 
+    def test_barcode_replacement_requires_confirmation_and_rejects_duplicates(self):
+        from unittest.mock import patch
+        from PySide6.QtWidgets import QMessageBox
+        w=self.window
+        w.store.clear()
+        original=w.store.products[0].code
+        d=ProductDialog(w.store,w,index=0)
+        d.code.setText('00012345')
+        with patch.object(QMessageBox,'question',return_value=QMessageBox.StandardButton.No) as question:
+            d.save()
+            question.assert_called_once()
+        self.assertEqual(w.store.products[0].code,original)
+        d.code.setText(w.store.products[1].code)
+        with patch.object(QMessageBox,'question') as question, patch.object(QMessageBox,'warning') as warning:
+            d.save()
+            warning.assert_called_once()
+            question.assert_not_called()
+        self.assertEqual(w.store.products[0].code,original)
+        d.code.setText('00012345')
+        with patch.object(QMessageBox,'question',return_value=QMessageBox.StandardButton.Yes):
+            d.save()
+        self.assertEqual(w.store.products[0].code,'00012345')
+        self.assertFalse(any(p.code == original for p in w.store.products))
+        d.deleteLater()
+
     def test_settings_and_tables_create(self):
         d=SettingsDialog(self.window.store,self.window)
         self.assertEqual(d.view.count(),3)

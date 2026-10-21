@@ -11,7 +11,7 @@ Caja/Arqueo/Insumos, pagos registrados y mixtos, stock por bultos/unidades, QR/a
 - No requiere Python instalado. Windows no está firmado. El código fuente y SHA-256 acompañan ambos paquetes.
 - Leé `main.md` para configuración, QR/alias, arqueo, monitores, sonidos, licencia y limitaciones.
 
-La publicación espera Windows, Linux y fuente; verifica los hashes antes de hacer público el prerelease. Esta nota describe el contenido previsto: no demuestra que el workflow remoto ya se haya ejecutado.
+Publicado con compilación nativa y prueba de arranque aprobadas en Windows y Linux. El workflow verificó los SHA-256 de ambos paquetes y del código fuente antes de publicar. [Ejecución verificada](https://github.com/DarkCristian/PoStoreBaires/actions/runs/39663807821).
 
 **Datos temporales: al cerrar se pierde la sesión. Sin servidor, sincronización, autenticación, impresión ni facturación fiscal. No procesa pagos externos ni confirma acreditaciones. No usar en producción.**
 

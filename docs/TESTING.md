@@ -26,4 +26,4 @@ Estas pruebas manuales siguen pendientes; los tests offscreen no prueban lectore
 - Arranque y carrito comprobados en Qt offscreen.
 - Build PyInstaller generado en Linux y ejecutable empaquetado probado con `--smoke-test`, con salida correcta.
 - Se corrigió el diálogo de confirmación de salida para que no bloquee el smoke-test.
-- Build y prueba del EXE Windows todavía pendientes. No se ha ejecutado el workflow remoto.
+- Build nativo y arranque de ejecutables Windows/Linux aprobados en [GitHub Actions](https://github.com/DarkCristian/PoStoreBaires/actions/runs/39663807821). Las pruebas manuales de hardware siguen pendientes.

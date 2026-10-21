@@ -7,7 +7,7 @@ from pathlib import Path
 import csv
 import re
 import sqlite3
-from .domain import amount
+from decimal import Decimal, InvalidOperation
 from .sqlite_utils import connect
 
 UPSTREAM = 'https://github.com/catdevnull/preciazo'
@@ -51,6 +51,15 @@ def public_url(value):
     # Store a reference only; no network fetch and no file/HTML loading.
     return text if text.startswith('https://') else ''
 
+def reference_price(value):
+    try:
+        price = Decimal(str(value).strip().replace(',', '.'))
+        if not price.is_finite() or not 0 < price <= 9_000_000_000:
+            raise ValueError('Precio inválido')
+        return int(price) if price == price.to_integral_value() else None
+    except InvalidOperation as e:
+        raise ValueError('Precio inválido') from e
+
 class Catalog:
     def __init__(self,path):
         self.path=Path(path).resolve()
@@ -58,6 +67,12 @@ class Catalog:
         with connect(self.path) as con:
             con.execute('CREATE TABLE IF NOT EXISTS refs (ean TEXT NOT NULL,name TEXT NOT NULL,price INTEGER,observed TEXT NOT NULL,source TEXT NOT NULL,url TEXT NOT NULL,image_url TEXT NOT NULL,brand TEXT NOT NULL,presentation TEXT NOT NULL)')
             con.execute('CREATE INDEX IF NOT EXISTS refs_ean ON refs(ean,observed)')
+            version = con.execute('PRAGMA user_version').fetchone()[0]
+            if version == 0:
+                con.execute('UPDATE refs SET price=CASE WHEN price % 100 = 0 THEN price / 100 ELSE NULL END WHERE price IS NOT NULL')
+                con.execute('PRAGMA user_version=2')
+            elif version != 2:
+                raise ValueError('Versión de catálogo no compatible.')
 
     def count(self):
         with connect(self.path) as con:
@@ -114,7 +129,7 @@ class Catalog:
                     ean=barcode(ean)
                     if not name or not str(name).strip():raise ValueError('Sin nombre')
                     if price is not None and (type(price) is not int or not 0<price<=900_000_000_000):raise ValueError('Precio inválido')
-                    yield Reference(ean,str(name).strip(),price,observation(seen),source,public_url(url),public_url(image))
+                    yield Reference(ean,str(name).strip(),price // 100 if price is not None and price % 100 == 0 else None,observation(seen),source,public_url(url),public_url(image))
                 except (ValueError,TypeError,OverflowError):yield None
         finally:con.close()
 
@@ -134,8 +149,7 @@ class Catalog:
                     name=(row['productos_descripcion'] or '').strip()
                     if not name:raise ValueError('Sin descripción')
                     # precio_referencia is per reference unit, not the package price.
-                    price=amount(row['productos_precio_lista'])
-                    if price<=0:raise ValueError('Precio inválido')
+                    price=reference_price(row['productos_precio_lista'])
                     branch='/'.join(str(row.get(k,'')).strip() for k in ('id_comercio','id_bandera','id_sucursal'))
                     presentation=' '.join(str(row.get(k,'') or '').strip() for k in ('productos_cantidad_presentacion','productos_unidad_medida_presentacion')).strip()
                     yield Reference(ean,name,price,observed,source+' · '+branch,brand=str(row.get('productos_marca','') or ''),presentation=presentation)

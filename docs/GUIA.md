@@ -22,3 +22,13 @@ Podés editar códigos y precios propios desde Insumos, sin una venta pendiente.
 En Caja, el botón **Buscar** con lupa junto al código abre un buscador dentro de la aplicación. Filtra por nombre o código mientras escribís y muestra precio y unidades disponibles descontando el carrito. Seleccioná un resultado y presioná **Agregar a la compra**, Enter en la búsqueda o doble clic para sumar una unidad. Cancelar no modifica la venta. Incluye todos los productos guardados en el inventario local, tanto manuales como creados a partir de una referencia. El catálogo externo no se vende directamente: primero requiere alta en Insumos con precio y stock propios. Se mantienen las validaciones de turno abierto, stock y guardado en disco.
 
 Si un código no existe o la búsqueda queda sin resultados al dejar de escribir, aparece **Producto no encontrado**. **Agregar manualmente** permite ingresar el código por teclado y buscarlo en el inventario; **Agregar nuevo** abre el alta en Insumos (con código precargado si es numérico). Se puede registrar un nuevo producto sin vaciar la compra; editar productos existentes sigue bloqueado durante una venta. El alta no suma automáticamente unidades al carrito. Cerrar el aviso no modifica la compra.
+
+## Pesos enteros y migración desde beta.2
+
+Precios, costos, pagos, vuelto, saldos, retiros y arqueos usan pesos argentinos enteros, también en SQLite. Ingresar `1500` guarda `1500` y muestra `$ 1.500`. No se admiten decimales ni separadores de miles al ingresar importes.
+
+La base comercial usa esquema 2. Una base de beta.2 (esquema 1) se convierte exactamente dividiendo los importes anteriores por 100, con copia SQLite automática `store.sqlite.before-pesos-<identificador>.sqlite` antes de escribir. Conserva códigos, cantidades, existencias e historial. No volver a abrir la base convertida con beta.2; para volver a esa versión usar la copia anterior.
+
+Si un importe comercial contiene centavos, se detiene la migración y se muestra el motivo sin redondear ni modificar sus registros. Requiere revisión de esos datos antes de continuar; esta versión no ofrece conversión con pérdida de fracciones.
+
+Las referencias externas con fracciones conservan nombre y procedencia, pero aparecen sin precio entero aplicable. Definí el precio propio manualmente. El campo externo `precio_centavos` mantiene su nombre original: solo se convierte en la frontera de importación; no es la unidad de la base del POS.

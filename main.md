@@ -6,7 +6,7 @@
 
 Desarrollado en **Python y PySide6/Qt**, cuenta con compilaciones para Windows y Linux. Permite trabajar con lector de códigos de barras o teclado, registrar distintos medios de pago y mostrar al cliente el QR o alias del comercio sin depender de una API de cobro.
 
-**Estado del proyecto:** beta en desarrollo. Esta documentación corresponde a **1.0.0-beta.2**, con persistencia local, catálogo y búsqueda. La versión beta.1 conserva su historial y sus paquetes originales. Los campos de perfiles y conectividad anticipan funciones futuras, pero actualmente no autentican usuarios ni sincronizan cajas.
+**Estado del proyecto:** beta en desarrollo. Esta documentación corresponde a **1.0.0-beta.3**, con persistencia local, catálogo y búsqueda. La versión beta.1 conserva su historial y sus paquetes originales. Los campos de perfiles y conectividad anticipan funciones futuras, pero actualmente no autentican usuarios ni sincronizan cajas.
 
 ## Características
 
@@ -18,7 +18,7 @@ Desarrollado en **Python y PySide6/Qt**, cuenta con compilaciones para Windows y
 - Agregado de una unidad por botón, Enter desde la búsqueda o doble clic sobre un resultado.
 - Carrito con cantidades, precios, subtotales y total; permite quitar unidades, eliminar productos o vaciar la venta.
 - Validación de turno abierto y existencias antes de agregar o confirmar.
-- Pagos en efectivo, wallet/transferencia, débito y crédito, incluidos pagos mixtos. Importes internos expresados en centavos enteros y cálculo de vuelto en efectivo.
+- Pagos en efectivo, wallet/transferencia, débito y crédito, incluidos pagos mixtos. Importes ingresados, calculados y guardados en pesos enteros argentinos, sin decimales y cálculo de vuelto en efectivo.
 - Sonidos opcionales de escaneo y caja registradora, con interruptores independientes.
 
 **Cuando no se encuentra un producto:** un código desconocido o una búsqueda sin resultados al dejar de escribir abre el diálogo **Producto no encontrado**, con dos opciones:
@@ -161,3 +161,13 @@ Las pruebas automatizadas verifican dominio, persistencia, importación y widget
 [Guía de uso](docs/GUIA.md) · [Catálogo Preciazo/SEPA](docs/PRECIAZO.md) · [Arquitectura](docs/ARCHITECTURE.md) · [Pruebas](docs/TESTING.md) · [Cambios](CHANGELOG.md) · [Seguridad](SECURITY.md) · [Componentes de terceros](THIRD_PARTY.md).
 
 Copyright (C) 2026 Cristian Carroccio. **GPL-3.0-only**, texto completo en [LICENSE](LICENSE). Permite usar, estudiar, modificar y redistribuir conforme a esa licencia, sin garantía. Las imágenes y QR del usuario no se incluyen en el proyecto. La maqueta HTA previa se conserva en `prototypes/hta/`; el código activo utiliza Qt nativo.
+
+## Pesos enteros y migración desde beta.2
+
+Precios, costos, pagos, vuelto, saldos, retiros y arqueos usan pesos argentinos enteros, también en SQLite. Ingresar `1500` guarda `1500` y muestra `$ 1.500`. No se admiten decimales ni separadores de miles al ingresar importes.
+
+La base comercial usa esquema 2. Una base de beta.2 (esquema 1) se convierte exactamente dividiendo los importes anteriores por 100, con copia SQLite automática `store.sqlite.before-pesos-<identificador>.sqlite` antes de escribir. Conserva códigos, cantidades, existencias e historial. No volver a abrir la base convertida con beta.2; para volver a esa versión usar la copia anterior.
+
+Si un importe comercial contiene centavos, se detiene la migración y se muestra el motivo sin redondear ni modificar sus registros. Requiere revisión de esos datos antes de continuar; esta versión no ofrece conversión con pérdida de fracciones.
+
+Las referencias externas con fracciones conservan nombre y procedencia, pero aparecen sin precio entero aplicable. Definí el precio propio manualmente. El campo externo `precio_centavos` mantiene su nombre original: solo se convierte en la frontera de importación; no es la unidad de la base del POS.

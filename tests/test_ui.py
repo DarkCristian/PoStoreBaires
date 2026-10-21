@@ -34,7 +34,7 @@ class NativeUI(unittest.TestCase):
         w.store.config.alias='mi.comercio'
         w.refresh_customer()
         self.assertIn('mi.comercio',w.customer.alias_label.text())
-        self.assertIn('850,00',w.customer.amount_label.text())
+        self.assertIn('850',w.customer.amount_label.text())
         d=PaymentDialog(w)
         d.fields[0].setText('0')
         d.fields[1].setText('850')
@@ -43,7 +43,7 @@ class NativeUI(unittest.TestCase):
         d.verified.setChecked(True)
         d.fields[1].setText('300')
         self.assertFalse(d.verified.isChecked())
-        self.assertIn('300,00',w.customer.amount_label.text())
+        self.assertIn('300',w.customer.amount_label.text())
         d.fields[1].setText('850')
         d.verified.setChecked(True)
         d.complete()
@@ -79,7 +79,7 @@ class NativeUI(unittest.TestCase):
             source=Path(folder)/'source.sqlite'
             with connect(source) as con:
                 con.execute('CREATE TABLE precios(ean TEXT,name TEXT,precio_centavos INTEGER,fetched_at INTEGER)')
-                con.execute("INSERT INTO precios VALUES ('00012345','Referencia',12550,1767225600)")
+                con.execute("INSERT INTO precios VALUES ('00012345','Referencia',12500,1767225600)")
             self.window.catalog=Catalog(Path(folder)/'catalog.sqlite')
             self.window.catalog.import_file(source)
             d=ProductDialog(self.window.store,self.window)
@@ -91,7 +91,7 @@ class NativeUI(unittest.TestCase):
             self.assertEqual(d.name.text(),'Referencia')
             self.assertEqual(d.price.text(),'200')
             d.apply_reference_price()
-            self.assertEqual(d.price.text(),'125.50')
+            self.assertEqual(d.price.text(),'125')
             self.assertEqual(d.cost.text(),'80')
             self.assertEqual(d.stock.value(),7)
             d.deleteLater()

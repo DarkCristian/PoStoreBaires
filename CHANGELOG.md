@@ -1,5 +1,13 @@
 # Cambios
 
+## 1.0.0-beta.3
+
+- Pesos enteros en formularios, cálculos, tickets y base SQLite; ingreso sin decimales.
+- Migración exacta del esquema 1 al 2 con copia anterior, preservando stock e historial. Rechaza importes comerciales fraccionarios sin redondearlos.
+- Conversión de catálogo/importaciones a pesos; referencias fraccionarias sin precio aplicable.
+- Documentación monetaria actualizada.
+
+
 ## 1.0.0-beta.2
 
 - Aviso de producto no encontrado con entrada manual o alta en Insumos conservando la compra.

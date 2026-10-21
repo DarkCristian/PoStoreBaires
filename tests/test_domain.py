@@ -8,21 +8,21 @@ class Transactions(unittest.TestCase):
         self.store.add(0)
 
     def test_exact_money(self):
-        self.assertEqual(amount('0,29'), 29)
-        self.assertEqual(amount('1200.50'), 120050)
-        for invalid in ('', '-1', 'NaN', 'Infinity', '0.001', '1e3'):
+        self.assertEqual(amount('1500'), 1500)
+        self.assertEqual(amount('0'), 0)
+        for invalid in ('', '-1', 'NaN', 'Infinity', '0.001', '1e3', '0,29', '1200.50', '1.000', '100.00'):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 amount(invalid)
 
     def test_cash_change_and_net_totals(self):
-        s = self.store.complete([100000, 0, 0, 0])
-        self.assertEqual(s.change, 15000)
-        self.assertEqual(s.payments[0], 85000)
-        self.assertEqual(s.received, 100000)
+        s = self.store.complete([1000, 0, 0, 0])
+        self.assertEqual(s.change, 150)
+        self.assertEqual(s.payments[0], 850)
+        self.assertEqual(s.received, 1000)
         self.assertEqual(self.store.products[0].stock, 35)
 
     def test_rejections_are_atomic(self):
-        for payments, verified in (([0,85000,0,0],False), ([0,85001,0,0],True), ([84999,0,0,0],True)):
+        for payments, verified in (([0,850,0,0],False), ([0,851,0,0],True), ([849,0,0,0],True)):
             with self.assertRaises(ValueError):
                 self.store.complete(payments, verified)
             self.assertEqual(self.store.products[0].stock, 36)
@@ -30,27 +30,27 @@ class Transactions(unittest.TestCase):
             self.assertEqual(self.store.cart, {0:1})
 
     def test_wallet_mixed_and_duplicate(self):
-        s = self.store.complete([20000,65000,0,0], True)
+        s = self.store.complete([200,650,0,0], True)
         self.assertEqual(sum(s.payments), s.total)
         with self.assertRaises(ValueError):
-            self.store.complete([20000,65000,0,0], True)
+            self.store.complete([200,650,0,0], True)
         self.assertEqual(len(self.store.sales),1)
 
     def test_stock_rechecked_before_commit(self):
         self.store.products[0].stock = 0
         with self.assertRaises(ValueError):
-            self.store.complete([85000,0,0,0])
+            self.store.complete([850,0,0,0])
         self.assertEqual(self.store.sales, [])
 
     def test_arqueo_and_new_turn(self):
-        self.store.complete([20000,65000,0,0], True)
-        self.store.withdraw(10000)
+        self.store.complete([200,650,0,0], True)
+        self.store.withdraw(100)
         expected = self.store.expected()
         result = self.store.close_turn(expected)
         self.assertEqual(result['differences'], [0,0,0,0])
-        self.assertEqual(expected, [1010000,65000,0,0])
-        self.store.open_turn(20000)
-        self.assertEqual(self.store.expected(),[20000,0,0,0])
+        self.assertEqual(expected, [10100,650,0,0])
+        self.store.open_turn(200)
+        self.assertEqual(self.store.expected(),[200,0,0,0])
 
     def test_relevo_requires_close(self):
         self.store.cart.clear()

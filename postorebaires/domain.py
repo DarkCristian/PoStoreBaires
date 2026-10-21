@@ -1,11 +1,10 @@
 """SPDX-License-Identifier: GPL-3.0-only
 Copyright (C) 2026 Cristian Carroccio.
 
-Local state. Money uses integer cents; no external payment processing.
+Local state. Money uses integer Argentine pesos; no external payment processing.
 """
 from dataclasses import dataclass, field
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
 import re
 from functools import wraps
 
@@ -30,24 +29,20 @@ METHODS = ("Efectivo", "Wallet / transferencia", "Débito", "Crédito")
 CATEGORIES = ("Limpieza", "Cigarrillos", "Golosinas", "Productos varios")
 
 def amount(value: str) -> int:
-    value = str(value).strip().replace(",", ".")
-    if not re.fullmatch(r"\d+(?:\.\d{1,2})?", value):
-        raise ValueError("Ingresá un importe positivo con hasta dos decimales.")
-    try:
-        result = int(Decimal(value) * 100)
-    except (InvalidOperation, ValueError):
-        raise ValueError("Importe inválido.") from None
-    if result > 900_000_000_000:
+    value = str(value).strip()
+    if not re.fullmatch(r"[0-9]+", value):
+        raise ValueError("Ingresá pesos enteros, sin decimales ni separadores de miles.")
+    result = int(value)
+    if result > 9_000_000_000:
         raise ValueError("Importe fuera de rango.")
     return result
 
 def money(value: int) -> str:
     sign = "−" if value < 0 else ""
-    value = abs(value)
-    return f"{sign}$ {value // 100:,}".replace(",", ".") + f",{value % 100:02d}"
+    return f"{sign}$ {abs(value):,}".replace(",", ".")
 
 def decimal_text(value: int) -> str:
-    return f"{value // 100}.{value % 100:02d}"
+    return str(value)
 
 @dataclass
 class Product:
@@ -110,7 +105,7 @@ class Store:
     sales: list = field(default_factory=list)
     closures: list = field(default_factory=list)
     opened: bool = True
-    opening: int = 1_000_000
+    opening: int = 10_000
     withdrawals: int = 0
     turn_start: int = 0
     repository: object = field(default=None, repr=False, compare=False)
@@ -118,10 +113,10 @@ class Store:
     @classmethod
     def demo(cls):
         return cls(products=[
-            Product("779001", "Alfajor chocolate", "Golosinas", 85000, 50000, 36, 12, 8, "chocolate"),
-            Product("779002", "Detergente 750 ml", "Limpieza", 190000, 120000, 18, 6, 6, "cleaning"),
-            Product("779003", "Cigarrillos x20", "Cigarrillos", 420000, 350000, 7, 10, 8, "cigarettes"),
-            Product("779004", "Agua mineral 500 ml", "Productos varios", 120000, 70000, 24, 6, 6, "water"),
+            Product("779001", "Alfajor chocolate", "Golosinas", 850, 500, 36, 12, 8, "chocolate"),
+            Product("779002", "Detergente 750 ml", "Limpieza", 1900, 1200, 18, 6, 6, "cleaning"),
+            Product("779003", "Cigarrillos x20", "Cigarrillos", 4200, 3500, 7, 10, 8, "cigarettes"),
+            Product("779004", "Agua mineral 500 ml", "Productos varios", 1200, 700, 24, 6, 6, "water"),
         ])
 
     def total(self):
@@ -202,7 +197,7 @@ class Store:
 
     @durable
     def withdraw(self, value):
-        if not self.opened or value <= 0 or value > self.expected()[0]:
+        if type(value) is not int or not self.opened or value <= 0 or value > self.expected()[0]:
             raise ValueError("Retiro inválido o superior al efectivo esperado.")
         self.withdrawals += value
 

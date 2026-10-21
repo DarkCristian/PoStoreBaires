@@ -34,19 +34,19 @@ class CatalogImport(unittest.TestCase):
         stats=self.catalog.import_file(path)
         refs=self.catalog.lookup('00012345')
         self.assertEqual(stats,{'imported':2,'skipped':1})
-        self.assertEqual(refs[0].price,13000)
+        self.assertEqual(refs[0].price,130)
         self.assertEqual(refs[0].observed,'2026-01-02')
         self.assertEqual(refs[1].image_url,'https://example.invalid/image.jpg')
         self.assertEqual(refs[0].image_url,'')
         self.assertEqual(before,hashlib.sha256(path.read_bytes()).digest())
 
     def test_sepa_flag_and_package_price_not_reference_unit(self):
-        row={'id_producto':'00012345','productos_ean':'1','productos_descripcion':'Presentación de prueba','productos_precio_lista':'100,50','productos_precio_referencia':'999','id_comercio':'1','id_bandera':'2','id_sucursal':'3'}
+        row={'id_producto':'00012345','productos_ean':'1','productos_descripcion':'Presentación de prueba','productos_precio_lista':'100,00','productos_precio_referencia':'999','id_comercio':'1','id_bandera':'2','id_sucursal':'3'}
         path=self.sepa([row,dict(row,id_producto='00099999',productos_ean='0')])
         stats=self.catalog.import_file(path,'SEPA prueba','2026-10-01')
         self.assertEqual(stats,{'imported':1,'skipped':1})
         refs=self.catalog.lookup('00012345')
-        self.assertEqual(refs[0].price,10050)
+        self.assertEqual(refs[0].price,100)
         self.assertIn('1/2/3',refs[0].source)
         self.assertEqual(self.catalog.lookup('00099999'),[])
 

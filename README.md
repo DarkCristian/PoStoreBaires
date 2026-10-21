@@ -6,9 +6,9 @@ La versión HTA anterior se conserva como referencia en `prototypes/hta/`. El pr
 
 ## Alcance real
 
-Beta local **con datos temporales en memoria**. Permite probar ventas, pagos registrados, inventario y arqueo. Todavía no es apta para operación productiva: cerrar descarta ventas, productos y ajustes.
+La rama de desarrollo incorpora **persistencia local SQLite** de ventas, stock, carrito, turnos y ajustes, además de un catálogo de referencia compatible con Preciazo/SEPA. Estos cambios todavía no están en el prerelease beta.1 publicado. Es una beta de pruebas, sin sincronización entre cajas.
 
-- Caja con lector USB que emula teclado y envía Enter; códigos de ejemplo 779001–779004.
+- Caja con lector USB que emula teclado y envía Enter.
 - Efectivo con vuelto, wallet, débito/crédito y pagos mixtos; importes en centavos enteros.
 - Confirmación wallet solo después de verificar manualmente la acreditación en la cuenta del comercio.
 - Pantalla del cliente en monitor seleccionable: productos, total, QR/alias y resultado.
@@ -18,7 +18,7 @@ Beta local **con datos temporales en memoria**. Permite probar ventas, pagos reg
 - Sonidos opcionales independientes: bip y caja registradora. Tutorial integrado.
 - Datos de comercio, logo, papel 58/80 mm y vista previa de ticket interno no fiscal.
 
-**Pendiente:** persistencia, base PostgreSQL, servidor y sincronización multicaja, autenticación/roles efectivos, lotes bancarios de tarjetas, impresión térmica, facturación fiscal, consulta de productos y precios por Internet, copias de seguridad. Principal/secundaria/IP y perfiles siguen siendo campos ilustrativos.
+**Pendiente:** base PostgreSQL, servidor y sincronización multicaja, autenticación/roles efectivos, lotes bancarios de tarjetas, impresión térmica, facturación fiscal, consulta de productos y precios por Internet y restauración desde la interfaz. Principal/secundaria/IP y perfiles siguen siendo campos ilustrativos.
 
 ## Ejecutar desde Python
 
@@ -104,3 +104,9 @@ Archivos de prerelease previstos:
 ## Licencia
 
 Copyright (C) 2026 Cristian Carroccio. GPL-3.0-only, texto completo en [LICENSE](LICENSE). Libre uso, estudio, modificación y distribución bajo esa licencia, sin garantía. Ver [componentes de terceros](THIRD_PARTY.md). Las imágenes/QR del usuario no se incluyen en el proyecto.
+
+## Catálogo y guardado local (desarrollo)
+
+Ver [Preciazo / SEPA](docs/PRECIAZO.md) para importar un catálogo por código de barras. La búsqueda es local; no se incluye una base ni se consulta una API de Internet. Los precios son referencias con fecha y fuente, aplicadas solo por decisión del usuario.
+
+La ruta de `store.sqlite` aparece en Ajustes; está fuera del portable, en los datos de la aplicación del usuario. Exportar copia usa el mecanismo de backup de SQLite e incluye el estado confirmado. No compartas ese archivo por LAN: esta persistencia es para una sola PC. Para restaurar, cerrá todas las sesiones, conservá aparte la base actual y sus archivos auxiliares, y colocá la copia como `store.sqlite` en una carpeta nueva; iniciá con `--data-dir RUTA`. Fotos, logos y QR requieren copia aparte.

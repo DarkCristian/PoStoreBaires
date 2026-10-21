@@ -3,7 +3,8 @@ from dataclasses import replace
 from html import escape
 from pathlib import Path
 import sys
-from PySide6.QtCore import Qt, QTimer, QUrl, QSize
+import sqlite3
+from PySide6.QtCore import Qt, QTimer, QUrl, QSize, QStandardPaths
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
@@ -14,6 +15,9 @@ from PySide6.QtWidgets import (
 )
 from . import __version__
 from .domain import Store, Product, METHODS, CATEGORIES, amount, money, decimal_text
+from .catalog import Catalog
+from .catalog_ui import CatalogDialog
+from .storage import LocalStore
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 STYLE = """
@@ -199,6 +203,11 @@ class SettingsDialog(QDialog):
         self.cash_sound.setChecked(cfg.cash_sound)
         form.addRow(self.scan_sound, button("Probar bip", lambda: parent.play_sound("scan", True)))
         form.addRow(self.cash_sound, button("Probar caja", lambda: parent.play_sound("cash", True)))
+        if store.repository:
+            path_label = label(str(store.repository.path))
+            path_label.setTextFormat(Qt.TextFormat.PlainText)
+            form.addRow("Base local", path_label)
+            form.addRow(button("Exportar copia de la base SQLite", parent.export_backup))
         scroll.setWidget(content)
         outer.addWidget(scroll)
         controls = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
@@ -246,8 +255,18 @@ class ProductDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("PoStoreBaires · Producto")
         self.store, self.index = store, index
+        self.main = parent
         p = store.products[index] if index is not None else Product(code, "", CATEGORIES[-1], 0)
-        form = QFormLayout(self)
+        self.reference = dict(p.reference)
+        self.references = []
+        self.resize(760, 720)
+        outer = QVBoxLayout(self)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        form = QFormLayout(content)
+        scroll.setWidget(content)
+        outer.addWidget(scroll)
         self.code, self.name = QLineEdit(p.code), QLineEdit(p.name)
         self.category = combo(list(CATEGORIES), p.category)
         self.price, self.cost = QLineEdit(decimal_text(p.price)), QLineEdit(decimal_text(p.cost))
@@ -259,11 +278,25 @@ class ProductDialog(QDialog):
                          ("Unidades por bulto", self.pack), ("Alerta mínimo", self.minimum),
                          ("Ilustración", self.illustration), ("Foto", self.photo)]:
             form.addRow(title, w)
-        form.addRow(label("Sin foto se utiliza la ilustración. Consulta por Internet pendiente."))
+        form.addRow(label("Sin foto se utiliza la ilustración. No se descargan imágenes externas automáticamente."))
+        self.reference_label = label("")
+        self.reference_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.reference_table = table(["Producto", "Referencia ARS", "Fecha", "Fuente"])
+        self.reference_table.setMaximumHeight(150)
+        form.addRow(button("Buscar código en catálogo de referencia", self.lookup))
+        form.addRow(self.reference_table)
+        form.addRow(self.reference_label)
+        form.addRow(button("Usar nombre y datos de la referencia seleccionada", self.apply_reference))
+        form.addRow(button("Usar precio de referencia seleccionado", self.apply_reference_price))
+        self.code.returnPressed.connect(self.lookup)
+        self.code.textChanged.connect(self.code_changed)
+        if code and getattr(parent, 'catalog', None):
+            self.lookup()
+
         controls = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         controls.accepted.connect(self.save)
         controls.rejected.connect(self.reject)
-        form.addRow(controls)
+        outer.addWidget(controls)
 
     def save(self):
         try:
@@ -271,11 +304,56 @@ class ProductDialog(QDialog):
                 load_image(self.photo.path())
             p = Product(self.code.text().strip(), self.name.text().strip(), self.category.currentText(),
                         amount(self.price.text()), amount(self.cost.text()), self.stock.value(), self.pack.value(),
-                        self.minimum.value(), self.illustration.currentText(), self.photo.path())
+                        self.minimum.value(), self.illustration.currentText(), self.photo.path(), dict(self.reference))
             self.store.save_product(p, self.index)
             self.accept()
         except ValueError as e:
             QMessageBox.warning(self, "Producto", str(e))
+
+    def code_changed(self):
+        self.references = []
+        self.reference = {}
+        self.reference_table.setRowCount(0)
+        self.reference_label.clear()
+
+    def lookup(self):
+        if not self.main.catalog:
+            self.reference_label.setText("Catálogo no configurado. Podés completar el producto manualmente.")
+            return
+        try:
+            self.references = self.main.catalog.lookup(self.code.text())
+            fill(self.reference_table, [(r.name, money(r.price) if r.price is not None else "Sin precio",
+                                        r.observed or "Fecha desconocida", r.source) for r in self.references])
+            if self.references:
+                self.reference_table.selectRow(0)
+                self.reference_label.setText("Referencia externa: revisá fecha, presentación y sucursal. Tu precio solo cambia si elegís usarlo.")
+            else:
+                self.reference_label.setText("No encontrado en el catálogo local. Alta manual disponible.")
+        except (ValueError, sqlite3.Error) as e:
+            self.reference_label.setText("Catálogo no disponible: " + str(e) + ". Podés cargar el producto manualmente.")
+
+    def selected_reference(self):
+        row = self.reference_table.currentRow()
+        return self.references[row] if 0 <= row < len(self.references) else None
+
+    def apply_reference(self):
+        from dataclasses import asdict
+        ref = self.selected_reference()
+        if not ref:
+            return
+        self.name.setText(ref.name)
+        self.reference = asdict(ref)
+        warning = " · DATOS ANTIGUOS O SIN FECHA" if ref.stale else ""
+        self.reference_label.setText(f"{ref.source} · {ref.observed or 'Fecha desconocida'}{warning}\n"
+                                     f"Marca: {ref.brand} · Presentación: {ref.presentation}\n"
+                                     f"Imagen (no descargada): {ref.image_url or 'No disponible; se usa ilustración'}")
+
+    def apply_reference_price(self):
+        ref = self.selected_reference()
+        if ref and ref.price is not None:
+            self.apply_reference()
+            self.price.setText(decimal_text(ref.price))
+
 
 
 class CustomerWindow(QWidget):
@@ -430,10 +508,12 @@ class PaymentDialog(QDialog):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, store=None):
+    def __init__(self, store=None, catalog=None):
         super().__init__()
         self.store = store or Store.demo()
-        self.last_sale = self.result_sale = None
+        self.catalog = catalog
+        self.last_sale = self.store.sales[-1] if self.store.sales else None
+        self.result_sale = None
         self.wallet_amount = None
         self.customer = CustomerWindow()
         self.sounds = {}
@@ -450,7 +530,7 @@ class MainWindow(QMainWindow):
         head = QHBoxLayout()
         head.addWidget(label("▣ PoStoreBaires", "title"))
         head.addStretch()
-        head.addWidget(label(f"{__version__} · Datos temporales"))
+        head.addWidget(label(f"{__version__} · Base local"))
         head.addWidget(button("Ayuda", self.help))
         head.addWidget(button("Ajustes", self.settings))
         root.addLayout(head)
@@ -461,7 +541,7 @@ class MainWindow(QMainWindow):
         self.build_cash()
         self.build_audit()
         self.build_inventory()
-        self.statusBar().showMessage("Beta local: datos temporales, sin sincronización ni impresión fiscal.")
+        self.statusBar().showMessage("Guardado local SQLite · Sin sincronización multicaja ni impresión fiscal." if self.store.repository else "Modo de prueba en memoria.")
         self.refresh()
 
     def notify(self, text):
@@ -496,7 +576,7 @@ class MainWindow(QMainWindow):
             actions.addWidget(button(text, action))
         left.addLayout(actions)
         quick = QHBoxLayout()
-        for i in range(4):
+        for i in range(min(4, len(self.store.products))):
             quick.addWidget(button(self.store.products[i].name, lambda checked=False, index=i: self.add(index)))
         left.addLayout(quick)
         layout.addWidget(frame, 3)
@@ -545,6 +625,7 @@ class MainWindow(QMainWindow):
         self.category.currentTextChanged.connect(self.refresh_inventory)
         row.addWidget(self.category)
         row.addWidget(button("Nuevo producto", lambda: self.product(), True))
+        row.addWidget(button("Catálogo de referencia", self.manage_catalog))
         layout.addLayout(row)
         self.inventory = table(["Producto", "Código", "Categoría", "Precio", "Stock", "Bultos + unidades"])
         self.inventory.setIconSize(QSize(42, 42))
@@ -622,21 +703,16 @@ class MainWindow(QMainWindow):
         if n > 0:
             self.add(index)
         else:
-            self.store.cart[index] -= 1
-            if self.store.cart[index] == 0:
-                del self.store.cart[index]
-            self.refresh()
+            self.guard(lambda: self.store.change_quantity(index, -1))
 
     def remove(self):
         index = self.cart_index()
         if index is not None:
-            del self.store.cart[index]
-            self.refresh()
+            self.guard(lambda: self.store.remove(index))
 
     def empty_cart(self):
         if self.store.cart and QMessageBox.question(self, "Venta", "¿Vaciar esta venta?") == QMessageBox.StandardButton.Yes:
-            self.store.cart.clear()
-            self.refresh()
+            self.guard(self.store.clear)
 
     def pay(self):
         if not self.store.opened or not self.store.cart:
@@ -667,8 +743,27 @@ class MainWindow(QMainWindow):
             return
         n, ok = QInputDialog.getInt(self, "Ingresar stock", "Bultos completos", 1, 1, 100000)
         if ok:
-            self.store.products[i].stock += n*self.store.products[i].pack
-            self.refresh()
+            self.guard(lambda: self.store.receive(i, n))
+
+    def manage_catalog(self):
+        if not self.catalog:
+            self.notify("Catálogo no disponible en el modo de prueba en memoria.")
+            return
+        try:
+            CatalogDialog(self.catalog, self).exec()
+        except sqlite3.Error as e:
+            self.notify("No se pudo abrir el catálogo: " + str(e))
+
+    def export_backup(self):
+        if not self.store.repository:
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Exportar copia SQLite", "PoStoreBaires-backup.sqlite", "SQLite (*.sqlite)")
+        if path:
+            try:
+                self.store.repository.backup(path)
+                self.notify("Copia de la base local guardada.")
+            except Exception as e:
+                self.notify(str(e))
 
     def settings(self):
         if SettingsDialog(self.store, self).exec() == QDialog.DialogCode.Accepted:
@@ -795,7 +890,7 @@ class MainWindow(QMainWindow):
         self.text_dialog("Guía de uso", HELP)
 
     def closeEvent(self, event):
-        if QMessageBox.question(self, "PoStoreBaires", "Al cerrar se pierde toda la sesión, productos y ajustes. ¿Cerrar?") != QMessageBox.StandardButton.Yes:
+        if QMessageBox.question(self, "PoStoreBaires", "¿Cerrar PoStoreBaires? Los cambios ya están guardados en la base local." if self.store.repository else "Modo de prueba: se perderán los datos al cerrar. ¿Cerrar?") != QMessageBox.StandardButton.Yes:
             event.ignore()
             return
         self.customer.close()
@@ -804,7 +899,7 @@ class MainWindow(QMainWindow):
 
 HELP = """
 <h1>PoStoreBaires · Guía Beta 1.0</h1>
-<h2>Inicio y lector</h2><p>Turno de ejemplo con $10.000 iniciales. Códigos 779001–779004. El lector USB debe emular teclado y enviar Enter.</p>
+<h2>Inicio y lector</h2><p>El primer inicio tiene inventario vacío y turno cerrado. Cargá productos y abrí un turno en Arqueo con el efectivo inicial real. El lector USB debe emular teclado y enviar Enter.</p>
 <h2>Cajas, perfiles y cajeros</h2><p>En Ajustes nombrá caja y cajero. Cerrá primero el turno para cambiarlos. Principal/Secundaria/IP y roles son ilustrativos: no conectan equipos ni restringen acciones todavía.</p>
 <h2>Productos</h2><p>En Insumos creá o editá productos, costo, precio, categoría, foto o ilustración, mínimo y unidades por bulto. El stock se conserva en unidades: tres bultos de doce suman treinta y seis. El aviso de reposición aparece en la barra inferior al cobrar. No hay consulta por Internet.</p>
 <h2>Ticket</h2><p>Ingresá comercio, razón social, logo y papel 58/80 mm. Último ticket muestra un comprobante interno no fiscal. La impresión térmica está pendiente.</p>
@@ -815,7 +910,8 @@ HELP = """
 <h2>Resultado</h2><p>Se muestran total y medios; efectivo muestra vuelto. Wallet íntegra muestra Cobrado OK después de confirmar. A los doce segundos vuelve la bienvenida con los datos de pago.</p>
 <h2>Sonidos</h2><p>Activá bip y caja registradora por separado en Ajustes. Los botones Probar permiten escucharlos. Los WAV son originales y están incluidos.</p>
 <h2>Arqueo y relevo</h2><p>Registrá retiros de efectivo. Cerrá declarando lo contado/verificado por cada medio. Revisá diferencias por separado en el detalle. El saldo inicial y los retiros afectan solo efectivo. Lotes bancarios de tarjetas pendientes.</p>
-<h2>Datos temporales</h2><p>Esta beta Python/Qt conserva datos en memoria. Cerrar pierde ventas, productos y ajustes. No usa una base de datos, no sincroniza cajas ni verifica permisos. No usar en producción.</p>
+<h2>Base local y copias</h2><p>Ventas, productos, stock, turnos, carrito y ajustes se guardan en SQLite al modificar. La base está en la carpeta de datos de la aplicación del usuario, fuera del portable. Consultá su ruta y exportá una copia desde Ajustes. No sincroniza cajas ni verifica permisos. No abrir la misma base desde dos sesiones: los conflictos se rechazan.</p>
+<h2>Catálogo Preciazo / SEPA</h2><p>En Insumos abrí Catálogo de referencia e importá un SQLite antiguo de Preciazo o productos.csv SEPA. Para CSV ingresá la fecha real del dataset. Se reemplaza solo el catálogo externo. Buscá desde el código en el alta/edición; elegí explícitamente usar nombre o precio. No cambia costo ni stock. Se muestra fuente/fecha; las imágenes externas no se descargan y se conserva la ilustración por defecto. No se incluyen datos ni código de Preciazo.</p>
 """
 
 
@@ -826,7 +922,22 @@ def main():
     app.setOrganizationName("PoStoreBaires")
     app.setStyle("Fusion")
     app.setStyleSheet(STYLE)
-    window = MainWindow()
+    if "--smoke-test" in sys.argv:
+        window = MainWindow(Store.demo())
+    else:
+        try:
+            data_dir = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))
+            if "--data-dir" in sys.argv:
+                data_dir = Path(sys.argv[sys.argv.index("--data-dir") + 1]).expanduser().resolve()
+            repository = LocalStore(data_dir / "store.sqlite")
+            window = MainWindow(repository.load())
+            try:
+                window.catalog = Catalog(data_dir / "reference.sqlite")
+            except sqlite3.Error as e:
+                window.notify("Catálogo no disponible; alta manual habilitada: " + str(e))
+        except Exception as e:
+            QMessageBox.critical(None, "No se pudo abrir la base", str(e) + "\nNo se reinició ni reemplazó la base.")
+            return 1
     window.show()
     if "--smoke-test" in sys.argv:
         window.closeEvent = lambda event: event.accept()

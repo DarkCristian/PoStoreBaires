@@ -13,3 +13,7 @@ La aplicación nativa usa Python 3.12, PySide6/Shiboken6 y Qt 6.8.3. PySide6 y S
 Los componentes de Qt se distribuyen como bibliotecas dinámicas en el portable `onedir`. Conservá sus avisos y los de los plugins al redistribuir. Qt incluye componentes de terceros con sus licencias propias. El portable no restringe la sustitución de bibliotecas compatibles ni la ingeniería inversa necesaria para depurar esas modificaciones. Los avisos/licencias disponibles en el entorno de build se copian a `licenses/dependencies`.
 
 Los QR, logos y fotos que seleccione el usuario no se incluyen en el código ni en los paquetes del proyecto.
+
+## Compatibilidad Preciazo / SEPA
+
+El importador propio documentado en [PRECIAZO.md](docs/PRECIAZO.md) lee formatos del proyecto [Preciazo](https://github.com/catdevnull/preciazo). No incluye código ni datos de ese repositorio y no es una dependencia de ejecución. La revisión indicada no mostró una licencia explícita; los permisos del dataset deben verificarse por separado antes de usarlo o redistribuirlo.

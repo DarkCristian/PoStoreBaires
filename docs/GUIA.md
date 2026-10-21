@@ -1,7 +1,7 @@
 # Guía PoStoreBaires — Beta Python/Qt
 
 1. Ejecutá `python run.py` con las dependencias instaladas, o abrí `PoStoreBaires.exe` del portable Windows completo.
-2. El turno inicial contiene $10.000 de efectivo. Probá códigos 779001–779004. El lector debe emular teclado y enviar Enter.
+2. El primer inicio tiene inventario vacío y turno cerrado. Cargá productos y abrí turno con el saldo inicial real. El lector debe emular teclado y enviar Enter.
 3. En Insumos creá/seleccioná productos. Editá costo, precio, mínimo, unidades por bulto y foto/ilustración. Ingresar bultos suma su conversión a unidades. No se editan productos con un carrito pendiente.
 4. En Ajustes ingresá nombre comercial, razón social, logo y papel. Último ticket es una vista previa interna no fiscal; no imprime.
 5. Cerrá el turno antes de cambiar caja/cajero; luego abrí otro con saldo inicial. Principal/Secundaria, IP y roles son ilustrativos.
@@ -13,4 +13,4 @@
 11. Sonidos independientes en Ajustes: bip al agregar y caja registradora al confirmar. Probar permite escucharlos antes de guardar.
 12. Arqueo: registrá retiros, cerrá con los declarados por medio y consultá diferencias en Detalle. El esperado de efectivo incluye inicial, cobros y retiros. Lotes bancarios de tarjetas pendientes.
 
-Al cerrar se pierde toda la sesión. Las imágenes y QR se leen desde sus archivos: no los muevas mientras usás la beta. No hay persistencia, red real ni uso productivo.
+Ventas, stock, carrito, turnos y ajustes se guardan localmente en SQLite. Exportá una copia desde Ajustes. Las imágenes y QR se leen desde sus archivos: no los muevas mientras usás la beta. No hay sincronización multicaja ni autenticación. Ver [catálogo Preciazo/SEPA](PRECIAZO.md).

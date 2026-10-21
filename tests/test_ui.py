@@ -6,7 +6,7 @@ import unittest
 from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtGui import QPixmap, QColor, QPdfWriter, QPainter
 from PySide6.QtCore import Qt
-from postorebaires.ui import MainWindow, PaymentDialog, SettingsDialog, STYLE, load_image
+from postorebaires.ui import MainWindow, PaymentDialog, SettingsDialog, STYLE, load_image, ProductDialog
 
 class NativeUI(unittest.TestCase):
     @classmethod
@@ -70,6 +70,30 @@ class NativeUI(unittest.TestCase):
             painter.end()
             self.assertFalse(load_image(str(pdf),1).isNull())
             with self.assertRaises(ValueError):load_image(str(pdf),2)
+
+    def test_catalog_selection_is_explicit_and_does_not_import_stock_or_cost(self):
+        from postorebaires.catalog import Catalog
+        with tempfile.TemporaryDirectory() as folder:
+            import sqlite3
+            source=Path(folder)/'source.sqlite'
+            with sqlite3.connect(source) as con:
+                con.execute('CREATE TABLE precios(ean TEXT,name TEXT,precio_centavos INTEGER,fetched_at INTEGER)')
+                con.execute("INSERT INTO precios VALUES ('00012345','Referencia',12550,1767225600)")
+            self.window.catalog=Catalog(Path(folder)/'catalog.sqlite')
+            self.window.catalog.import_file(source)
+            d=ProductDialog(self.window.store,self.window)
+            d.code.setText('00012345')
+            d.price.setText('200');d.cost.setText('80');d.stock.setValue(7)
+            d.lookup()
+            self.assertEqual(d.price.text(),'200')
+            d.apply_reference()
+            self.assertEqual(d.name.text(),'Referencia')
+            self.assertEqual(d.price.text(),'200')
+            d.apply_reference_price()
+            self.assertEqual(d.price.text(),'125.50')
+            self.assertEqual(d.cost.text(),'80')
+            self.assertEqual(d.stock.value(),7)
+            d.deleteLater()
 
     def test_settings_and_tables_create(self):
         d=SettingsDialog(self.window.store,self.window)

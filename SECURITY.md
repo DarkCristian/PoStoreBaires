@@ -1,6 +1,6 @@
 # Seguridad
 
-PoStoreBaires Beta 1.0 es una aplicación Python/Qt local con datos en memoria, sin autenticación ni sincronización. No usar con datos ni operaciones comerciales reales. El usuario verifica las acreditaciones desde la cuenta del comercio; el programa no solicita claves de wallets o tarjetas ni realiza cobros externos.
+PoStoreBaires Beta 1.0 es una aplicación Python/Qt local con persistencia SQLite local en desarrollo, sin autenticación ni sincronización. La beta todavía requiere validación antes del uso productivo. Las copias contienen datos del comercio; protegé su acceso. El usuario verifica las acreditaciones desde la cuenta del comercio; el programa no solicita claves de wallets o tarjetas ni realiza cobros externos.
 
 No requiere permisos de administrador. No instala servicios, cambia el registro ni solicita desactivar protecciones. Los QR, logos, fotos y PDF seleccionados se leen localmente. No carga JavaScript ni contenido web. Las dependencias se descargan al preparar el entorno de desarrollo o compilación, no al vender.
 

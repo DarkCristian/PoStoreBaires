@@ -26,7 +26,7 @@ class CatalogDialog(QDialog):
         self.setWindowTitle('PoStoreBaires · Catálogo de referencia')
         self.resize(700,420)
         layout=QVBoxLayout(self)
-        intro=QLabel('Importa un SQLite antiguo de Preciazo o productos.csv de SEPA.\nReemplaza solo el catálogo de referencia; nunca ventas, precios propios o stock.\nEl paquete no incluye datos externos ni realiza descargas automáticas.')
+        intro=QLabel('Importa un SQLite antiguo de Preciazo o productos.csv de SEPA.\nReemplaza solo el catálogo de referencia; nunca ventas, precios propios o stock.\nPrecios fraccionarios: se conserva el producto sin precio entero aplicable.\nEl paquete no incluye datos externos ni realiza descargas automáticas.')
         intro.setWordWrap(True);layout.addWidget(intro)
         self.status=QLabel(f'Referencias disponibles: {catalog.count()}');layout.addWidget(self.status)
         form=QFormLayout()

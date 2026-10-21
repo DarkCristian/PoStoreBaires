@@ -274,7 +274,7 @@ class ProductDialog(QDialog):
         self.illustration = combo(["box", "chocolate", "cleaning", "cigarettes", "water"], p.illustration)
         self.photo = PathInput(p.photo)
         for title, w in [("Código", self.code), ("Nombre", self.name), ("Categoría", self.category),
-                         ("Precio unitario", self.price), ("Costo unitario", self.cost), ("Stock unidades", self.stock),
+                         ("Precio unitario (pesos enteros)", self.price), ("Costo unitario (pesos enteros)", self.cost), ("Stock unidades", self.stock),
                          ("Unidades por bulto", self.pack), ("Alerta mínimo", self.minimum),
                          ("Ilustración", self.illustration), ("Foto", self.photo)]:
             form.addRow(title, w)
@@ -334,7 +334,7 @@ class ProductDialog(QDialog):
             return
         try:
             self.references = self.main.catalog.lookup(self.code.text())
-            fill(self.reference_table, [(r.name, money(r.price) if r.price is not None else "Sin precio",
+            fill(self.reference_table, [(r.name, money(r.price) if r.price is not None else "Sin precio entero",
                                         r.observed or "Fecha desconocida", r.source) for r in self.references])
             if self.references:
                 self.reference_table.selectRow(0)
@@ -545,7 +545,7 @@ class PaymentDialog(QDialog):
         form.addRow(label(money(parent.store.total()), "amount"))
         self.fields = []
         for i, method in enumerate(METHODS):
-            field = QLineEdit(decimal_text(parent.store.total()) if i == 0 else "0.00")
+            field = QLineEdit(decimal_text(parent.store.total()) if i == 0 else "0")
             self.fields.append(field)
             form.addRow("Efectivo recibido" if i == 0 else method, field)
         self.verified = QCheckBox("Verifiqué la acreditación wallet en la cuenta del comercio")
@@ -576,7 +576,7 @@ class PaymentDialog(QDialog):
             value = 0
         if not value:
             for i, field in enumerate(self.fields):
-                field.setText(decimal_text(self.main.store.total()) if i == 1 else "0.00")
+                field.setText(decimal_text(self.main.store.total()) if i == 1 else "0")
         self.main.open_customer()
 
     def complete(self):
@@ -956,7 +956,7 @@ class MainWindow(QMainWindow):
         form = QFormLayout(dialog)
         fields = []
         for method, expected in zip(METHODS, self.store.expected()):
-            field = QLineEdit("0.00")
+            field = QLineEdit("0")
             form.addRow(f"{method} · esperado {money(expected)}", field)
             fields.append(field)
         def save():
@@ -1054,9 +1054,11 @@ def main():
                 data_dir = Path(sys.argv[sys.argv.index("--data-dir") + 1]).expanduser().resolve()
             repository = LocalStore(data_dir / "store.sqlite")
             window = MainWindow(repository.load())
+            if repository.migration_backup:
+                window.notify("Base convertida a pesos enteros. Copia anterior: " + str(repository.migration_backup))
             try:
                 window.catalog = Catalog(data_dir / "reference.sqlite")
-            except sqlite3.Error as e:
+            except (sqlite3.Error, ValueError) as e:
                 window.notify("Catálogo no disponible; alta manual habilitada: " + str(e))
         except Exception as e:
             QMessageBox.critical(None, "No se pudo abrir la base", str(e) + "\nNo se reinició ni reemplazó la base.")
@@ -1065,7 +1067,7 @@ def main():
     if "--smoke-test" in sys.argv:
         window.closeEvent = lambda event: event.accept()
         window.add(0)
-        assert window.store.total() == 85000
+        assert window.store.total() == 850
         print("PoStoreBaires native startup smoke test passed", flush=True)
         QTimer.singleShot(200, app.quit)
     return app.exec()

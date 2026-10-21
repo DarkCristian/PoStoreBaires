@@ -1,32 +1,23 @@
-# PoStoreBaires 1.0.0-beta.2
+# PoStoreBaires 1.0.0-beta.3
 
-Beta de pruebas para Windows y Linux. Código Python/PySide6 nativo, GPL-3.0-only.
+## Pesos enteros
 
-## Novedades
+Precios, costos, ventas, pagos, vuelto y arqueos se ingresan, calculan y guardan en pesos argentinos enteros. Ingresar 1500 guarda 1500 y muestra $ 1.500. No admite fracciones ni separadores de miles en los campos.
 
-- Persistencia SQLite local de ventas, stock, carrito, turnos y ajustes; copia exportable desde Ajustes.
-- Buscador con lupa en Caja por nombre o código, precio y disponibilidad; permite agregar por botón, Enter o doble clic.
-- Producto no encontrado: ingreso manual de código o alta en Insumos conservando la compra.
-- Confirmación al reemplazar códigos; rechazo de duplicados.
-- Catálogo compatible con SQLite antiguo de Preciazo y CSV SEPA, con fuente/fecha y aplicación manual de nombre/precio. No se incluyen datasets ni descarga de imágenes.
-- Créditos a Nulo y colaboradores de Preciazo. Presentación y guía completas en main.md.
+## Datos existentes
 
-## Descargar y ejecutar
+Migra exactamente bases de beta.2 (esquema 1) a esquema 2, con copia SQLite automática antes de escribir. No modifica cantidades, códigos ni stock. Si algún importe comercial tiene centavos, informa el problema y detiene la migración sin redondear ni alterar sus registros. Conservar la copia anterior para usar beta.2: la base convertida requiere beta.3.
 
-Windows: extraer todo PoStoreBaires-1.0.0-beta.2-Windows.zip y abrir PoStoreBaires.exe dentro de la carpeta. Conservar _internal y recursos. EXE sin firma.
+Catálogo: precios en pesos enteros. Referencias externas con fracciones conservan descripción y procedencia, sin precio aplicable; el precio propio se ingresa manualmente. No se incluyen datasets externos.
 
-Linux x86_64: extraer PoStoreBaires-1.0.0-beta.2-Linux.tar.gz e iniciar ./PoStoreBaires/PoStoreBaires desde un escritorio compatible. Build sobre Ubuntu 22.04.
+## Descargar y probar
 
-Incluye código fuente y SHA256SUMS.txt. La publicación exige tests, builds y arranque de ejecutables de ambas plataformas, más verificación de hashes.
+Windows: extraer todo PoStoreBaires-1.0.0-beta.3-Windows.zip y abrir PoStoreBaires.exe. Conservar _internal y recursos. EXE sin firma.
 
-## Primer uso y datos
+Linux x86_64: extraer PoStoreBaires-1.0.0-beta.3-Linux.tar.gz e iniciar ./PoStoreBaires/PoStoreBaires. Build sobre Ubuntu 22.04.
 
-La base nueva comienza vacía y con turno cerrado. Configurar comercio/cajero, crear productos y abrir turno con el efectivo inicial real. Ayuda se abre dentro de la aplicación.
+Código fuente y SHA256SUMS.txt incluidos. Tests, builds y arranque de ejecutables de ambos sistemas requeridos antes de publicar.
 
-Los datos se guardan fuera del portable, en la carpeta de datos del usuario; consultar ruta y exportar copia desde Ajustes. Respaldar fotos, logos y QR por separado. No compartir SQLite por LAN. La beta.1 trabajaba en memoria y no generaba una base para migrar.
+La base nueva comienza vacía y con turno cerrado. La base se guarda fuera del portable; ruta y exportación de copia en Ajustes. Fotos, logos y QR requieren copia aparte.
 
-## Límites
-
-Sin servidor multicaja, autenticación efectiva, impresión térmica ni facturación fiscal. Wallet requiere verificación manual de acreditación. Catálogo requiere archivo autorizado importado; no hay API ni dataset incluido. Las pruebas automatizadas usan datos sintéticos y no sustituyen pruebas con lector físico, monitores, audio y QR reales.
-
-Manual: main.md y docs/GUIA.md. Importador: docs/PRECIAZO.md.
+Mantiene búsqueda con lupa, alta de productos, persistencia y catálogo de beta.2. Sin servidor multicaja, autenticación efectiva, impresión térmica ni facturación fiscal. Wallet requiere verificación manual. Manual: main.md; formatos y créditos: docs/PRECIAZO.md.

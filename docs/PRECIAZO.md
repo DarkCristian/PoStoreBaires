@@ -19,7 +19,7 @@ No hay descarga automática de bases ni conexión a una API pública. El catálo
 | SQLite antiguo | Tabla real `precios`: `ean`, `name`, `precio_centavos`, `fetched_at`; opcionales `url`, `image_url` |
 | CSV SEPA UTF-8, coma o punto y coma | `id_producto`, `productos_ean`, `productos_descripcion`, `productos_precio_lista`; opcionales marca, presentación e IDs de comercio/bandera/sucursal |
 
-SQLite se abre en modo lectura. `precio_centavos` ya está en centavos; `fetched_at` conserva fecha de observación. `in_stock` de otra tienda nunca se convierte en inventario propio.
+SQLite se abre en modo lectura. `precio_centavos` es un campo del archivo externo en centavos: el importador lo convierte a pesos enteros cuando es exacto. Si contiene fracciones de peso se conserva la referencia sin precio aplicable, para ingresar el precio propio manualmente; `fetched_at` conserva fecha de observación. `in_stock` de otra tienda nunca se convierte en inventario propio.
 
 En SEPA, **`productos_ean` es un indicador 0/1, no el código**. Solo se importan filas con indicador 1 y un `id_producto` válido. Se usa precio de lista de la presentación, no `productos_precio_referencia` por unidad de medida. IDs internos, precios inválidos y filas incompletas se omiten y contabilizan. La fecha se toma del dataset declarado, no del día de importación.
 
@@ -32,3 +32,5 @@ Las URLs HTTPS se guardan como metadatos, sin descargar imágenes. Se conserva l
 Consultar también `db-datos/schema.js`, `rust/src/api/main.rs` y `sepa/db/schema.ts` del repositorio de referencia para contrastar los formatos; no se presupone que exista un servicio público estable.
 
 Créditos: **Nulo y colaboradores de [catdevnull/preciazo](https://github.com/catdevnull/preciazo)**, proyecto de referencia para los formatos del catálogo de supermercados argentinos.
+
+Desde beta.3, el índice local guarda precios en pesos enteros (versión de catálogo 2). El índice anterior se convierte una sola vez; las referencias fraccionarias quedan sin precio aplicable. Los archivos externos nunca se modifican.

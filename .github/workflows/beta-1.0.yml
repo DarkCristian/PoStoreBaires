@@ -3,7 +3,7 @@ name: PoStoreBaires Beta 1.0 — Windows and Linux
 on:
   push:
     branches: [main]
-    tags: ['v1.0.0-beta.2']
+    tags: ['v1.0.0-beta.3']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -60,7 +60,7 @@ jobs:
         with:
           name: PoStoreBaires-beta-${{ matrix.platform }}
           path: |
-            dist/PoStoreBaires-1.0.0-beta.2-${{ matrix.platform }}.*
+            dist/PoStoreBaires-1.0.0-beta.3-${{ matrix.platform }}.*
             dist/SHA256SUMS-${{ matrix.platform }}.txt
           if-no-files-found: error
           retention-days: 30
@@ -81,14 +81,14 @@ jobs:
         with:
           name: PoStoreBaires-beta-source
           path: |
-            dist/PoStoreBaires-1.0.0-beta.2-source.zip
+            dist/PoStoreBaires-1.0.0-beta.3-source.zip
             dist/SHA256SUMS-source.txt
           if-no-files-found: error
           retention-days: 30
 
   prerelease:
     name: Verify all packages and publish prerelease
-    if: (github.event_name == 'push' && github.ref == 'refs/tags/v1.0.0-beta.2') || (github.event_name == 'workflow_dispatch' && inputs.publish_prerelease)
+    if: (github.event_name == 'push' && github.ref == 'refs/tags/v1.0.0-beta.3') || (github.event_name == 'workflow_dispatch' && inputs.publish_prerelease)
     needs: [build, source]
     runs-on: ubuntu-22.04
     timeout-minutes: 10

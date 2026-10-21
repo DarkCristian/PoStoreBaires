@@ -4,7 +4,7 @@
 
 Aplicación nativa Python/PySide6-Qt con estado persistente local. Un único turno activo e historial de cierres. No existe conexión entre máquinas.
 
-El dominio separa validación de pago/stock de la interfaz. Importes en centavos enteros; pagos insuficientes, excedentes no efectivos y wallet no verificada se rechazan antes de modificar inventario. La pantalla del cliente es un QWidget independiente; PDF se renderiza con QtPdf y el audio con QSoundEffect.
+El dominio separa validación de pago/stock de la interfaz. Importes en pesos argentinos enteros; pagos insuficientes, excedentes no efectivos y wallet no verificada se rechazan antes de modificar inventario. La pantalla del cliente es un QWidget independiente; PDF se renderiza con QtPdf y el audio con QSoundEffect.
 
 ## Producción planificada
 
@@ -27,3 +27,5 @@ No hay fechas prometidas para estas etapas. La próxima etapa es el servicio cen
 `storage.py` conserva una instantánea JSON del dominio en SQLite, con versión de esquema y revisión optimista. Cada operación confirmada guarda ventas y stock en una transacción; ante un fallo de guardado se revierte también el estado en memoria. Una sesión desactualizada no puede sobrescribir otra. Es un diseño local para esta beta, no el servidor multicaja previsto. No compartir la base por red.
 
 `catalog.py` mantiene un índice SQLite separado y reemplazable. Importa SQLite antiguo en modo lectura o CSV SEPA por streaming; cancelar o fallar conserva el índice anterior. La UI importa en un hilo de trabajo. No se copia código upstream, se descargan imágenes ni se incluye un dataset. Ver [formatos](PRECIAZO.md).
+
+Esquema comercial 2 y catálogo versión 2 guardan pesos enteros. La migración de esquema 1 conserva una copia previa y exige conversión exacta: no redondea registros comerciales. Referencias fraccionarias se mantienen sin precio aplicable.

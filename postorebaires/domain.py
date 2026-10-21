@@ -146,7 +146,7 @@ class Store:
 
     @durable
     def save_product(self, product, index=None):
-        if self.cart:
+        if self.cart and index is not None:
             raise ValueError("Terminá o vaciá la venta antes de editar productos.")
         if not product.name.strip() or not product.code.strip():
             raise ValueError("Completá nombre y código.")

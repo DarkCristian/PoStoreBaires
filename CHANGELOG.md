@@ -1,6 +1,10 @@
 # Cambios
 
-## Sin publicar
+## 1.0.0-beta.2
+
+- Aviso de producto no encontrado con entrada manual o alta en Insumos conservando la compra.
+- Créditos de Preciazo y confirmación al reemplazar un código.
+- Presentación y guía actualizadas en main.md.
 
 - Botón de lupa en Caja: búsqueda por nombre/código del inventario local, selección y agregado a la compra con validación de stock y turno.
 

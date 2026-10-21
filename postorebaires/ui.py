@@ -374,6 +374,9 @@ class ProductSearchDialog(QDialog):
         super().__init__(parent)
         self.main = parent
         self.indices = []
+        self.missing_timer = QTimer(self)
+        self.missing_timer.setSingleShot(True)
+        self.missing_timer.timeout.connect(self.not_found)
         self.setWindowTitle("PoStoreBaires · Buscar producto para la compra")
         self.resize(780, 500)
         layout = QVBoxLayout(self)
@@ -400,6 +403,7 @@ class ProductSearchDialog(QDialog):
         self.query.setFocus()
 
     def refresh_results(self):
+        self.missing_timer.stop()
         terms = self.query.text().strip().casefold().split()
         store = self.main.store
         self.indices = [i for i, p in enumerate(store.products)
@@ -413,11 +417,26 @@ class ProductSearchDialog(QDialog):
             self.results.selectRow(0)
             self.message.setText("Elegí un producto. Enter o doble clic agrega una unidad a la compra.")
         else:
-            self.message.setText("Sin coincidencias en el inventario del comercio. Cargá el producto desde Insumos.")
+            self.message.setText("Sin coincidencias en el inventario del comercio.")
+            if self.query.text().strip():
+                self.missing_timer.start(800)
+
+    def not_found(self):
+        self.missing_timer.stop()
+        if self.indices or not self.query.text().strip():
+            return
+        query = self.query.text().strip()
+        self.reject()
+        self.main.product_not_found(query)
+
+    def done(self, result):
+        self.missing_timer.stop()
+        super().done(result)
 
     def add_selected(self):
         row = self.results.currentRow()
         if not 0 <= row < len(self.indices):
+            self.not_found()
             return
         try:
             self.main.store.add(self.indices[row])
@@ -774,7 +793,26 @@ class MainWindow(QMainWindow):
             if p.code == code:
                 self.add(i)
                 return
-        self.product(code=code)
+        self.product_not_found(code)
+
+    def product_not_found(self, query=""):
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("Producto no encontrado")
+        dialog.setText("Producto no encontrado")
+        dialog.setInformativeText("Ingresá el código por teclado o registrá un producto nuevo en Insumos.")
+        dialog.setIcon(QMessageBox.Icon.Information)
+        manual = dialog.addButton("Agregar manualmente", QMessageBox.ButtonRole.ActionRole)
+        new = dialog.addButton("Agregar nuevo", QMessageBox.ButtonRole.ActionRole)
+        dialog.exec()
+        if dialog.clickedButton() == manual:
+            code, ok = QInputDialog.getText(self, "Agregar manualmente", "Código de barras:", text=query if query.isdigit() else "")
+            if ok and code.strip():
+                self.tabs.setCurrentIndex(0)
+                self.scan_input.setText(code.strip())
+                self.scan()
+        elif dialog.clickedButton() == new:
+            self.tabs.setCurrentIndex(2)
+            self.product(code=query if query.isdigit() else "")
 
     def cart_index(self):
         row = self.cart_table.currentRow()
@@ -806,7 +844,7 @@ class MainWindow(QMainWindow):
         PaymentDialog(self).exec()
 
     def product(self, index=None, code=""):
-        if self.store.cart:
+        if self.store.cart and index is not None:
             self.notify("Terminá o vaciá la venta antes de editar productos.")
             return
         ProductDialog(self.store, self, index, code).exec()

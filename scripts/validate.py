@@ -4,7 +4,7 @@ import ast
 import wave
 import xml.etree.ElementTree as ET
 root=Path(__file__).resolve().parents[1]
-assert (root/'VERSION').read_text().strip()=='1.0.0-beta.1'
+assert (root/'VERSION').read_text().strip()=='1.0.0-beta.2'
 assert 'GNU GENERAL PUBLIC LICENSE' in (root/'LICENSE').read_text()
 for folder in ('postorebaires','scripts','tests'):
     for p in (root/folder).rglob('*.py'):

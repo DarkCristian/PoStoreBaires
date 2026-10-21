@@ -6,7 +6,7 @@ La versión HTA anterior se conserva como referencia en `prototypes/hta/`. El pr
 
 ## Alcance real
 
-La rama de desarrollo incorpora **persistencia local SQLite** de ventas, stock, carrito, turnos y ajustes, además de un catálogo de referencia compatible con Preciazo/SEPA. Estos cambios todavía no están en el prerelease beta.1 publicado. Es una beta de pruebas, sin sincronización entre cajas.
+La rama de desarrollo incorpora **persistencia local SQLite** de ventas, stock, carrito, turnos y ajustes, además de un catálogo de referencia compatible con Preciazo/SEPA. Esta es la versión 1.0.0-beta.2; beta.1 conserva su historial. Es una beta de pruebas, sin sincronización entre cajas.
 
 - Caja con lector USB que emula teclado y envía Enter.
 - Efectivo con vuelto, wallet, débito/crédito y pagos mixtos; importes en centavos enteros.
@@ -39,7 +39,7 @@ No requiere API de cobro. El cliente paga desde su app usando el QR/alias del co
 Con Python 3.12 de 64 bits y el launcher `py` instalado, ejecutá **`Compilar-Windows.cmd`**. Crea un entorno local, instala las dependencias declaradas, ejecuta pruebas y genera:
 
 - `dist/PoStoreBaires/PoStoreBaires.exe` y bibliotecas Qt.
-- `dist/PoStoreBaires-1.0.0-beta.1-Windows.zip` portable.
+- `dist/PoStoreBaires-1.0.0-beta.2-Windows.zip` portable.
 - Archivo de código fuente y `SHA256SUMS-Windows.txt`.
 
 El portable es una carpeta completa, no un EXE suelto: extraé todo el ZIP y conservá `_internal`, recursos y licencias. El EXE no está firmado. El build Windows debe hacerse en Windows; un build Linux no produce un ejecutable Windows.
@@ -70,7 +70,7 @@ python scripts/package.py
 Para ejecutar el paquete Linux publicado:
 
 ```sh
-tar -xzf PoStoreBaires-1.0.0-beta.1-Linux.tar.gz
+tar -xzf PoStoreBaires-1.0.0-beta.2-Linux.tar.gz
 ./PoStoreBaires/PoStoreBaires
 ```
 
@@ -82,7 +82,7 @@ Conservá toda la carpeta. `tar.gz` preserva permisos y enlaces de bibliotecas. 
 
 - Push/PR a `main` o ejecución manual sin marcar publicación: valida y genera artifacts.
 - Ejecución manual con `publish_prerelease` activado: compila ambos sistemas y publica la beta sobre el commit exacto del run, creando el tag si hace falta.
-- Push del tag `v1.0.0-beta.1`: espera **ambas compilaciones y el código fuente**, verifica checksums y crea un borrador de prerelease.
+- Push del tag `v1.0.0-beta.2`: espera **ambas compilaciones y el código fuente**, verifica checksums y crea un borrador de prerelease.
 - Solo después de subir Windows, Linux, fuente y SHA256SUMS.txt se hace público el prerelease. Si falla una compilación no se publica; si falla la subida, el borrador permanece privado para revisión.
 - No sobrescribe releases existentes ni usa una compilación antigua como si fuera nueva.
 
@@ -90,9 +90,9 @@ Archivos de prerelease previstos:
 
 | Archivo | Contenido |
 | --- | --- |
-| `PoStoreBaires-1.0.0-beta.1-Windows.zip` | Portable Windows x64 completo |
-| `PoStoreBaires-1.0.0-beta.1-Linux.tar.gz` | Portable Linux x64 completo |
-| `PoStoreBaires-1.0.0-beta.1-source.zip` | Código fuente, documentación, licencia y scripts |
+| `PoStoreBaires-1.0.0-beta.2-Windows.zip` | Portable Windows x64 completo |
+| `PoStoreBaires-1.0.0-beta.2-Linux.tar.gz` | Portable Linux x64 completo |
+| `PoStoreBaires-1.0.0-beta.2-source.zip` | Código fuente, documentación, licencia y scripts |
 | `SHA256SUMS.txt` | Hashes de los tres archivos |
 
 **Repositorio:** [DarkCristian/PoStoreBaires](https://github.com/DarkCristian/PoStoreBaires). Consultá [Actions](https://github.com/DarkCristian/PoStoreBaires/actions) para el estado de las compilaciones y [Releases](https://github.com/DarkCristian/PoStoreBaires/releases) para paquetes publicados. Un workflow escrito no equivale a una compilación exitosa.

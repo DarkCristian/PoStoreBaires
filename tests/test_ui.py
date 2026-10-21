@@ -145,7 +145,10 @@ class NativeUI(unittest.TestCase):
             d.deleteLater()
             d=ProductSearchDialog(self.window,'no existe')
             self.assertFalse(d.add_button.isEnabled())
-            d.add_selected()
+            from unittest.mock import patch
+            with patch.object(self.window,"product_not_found") as missing:
+                d.add_selected()
+                missing.assert_called_once_with("no existe")
             self.assertEqual(self.window.store.cart,{0:1})
             d.deleteLater()
 
@@ -162,6 +165,30 @@ class NativeUI(unittest.TestCase):
         self.assertIn('Abrí un turno',d.message.text())
         self.assertEqual(d.result(),QDialog.DialogCode.Rejected)
         d.deleteLater()
+
+    def test_missing_product_choices_and_existing_cart_survives_new_registration(self):
+        from unittest.mock import patch
+        from PySide6.QtWidgets import QMessageBox, QInputDialog
+        from postorebaires.domain import Product
+        w=self.window
+        with patch('postorebaires.ui.QMessageBox') as box, patch.object(w,'product') as product:
+            box.return_value.addButton.side_effect=['manual','new']
+            box.return_value.clickedButton.return_value='new'
+            w.product_not_found('00099999')
+            product.assert_called_once_with(code='00099999')
+            self.assertEqual(w.tabs.currentIndex(),2)
+        with patch('postorebaires.ui.QMessageBox') as box, patch.object(QInputDialog,'getText',return_value=('779002',True)):
+            box.return_value.addButton.side_effect=['manual','new']
+            box.return_value.clickedButton.return_value='manual'
+            w.product_not_found('nombre')
+        self.assertEqual(w.store.cart,{0:1,1:1})
+        w.store.save_product(Product('00099999','Nuevo','Productos varios',100,stock=3))
+        self.assertEqual(w.store.cart,{0:1,1:1})
+        with self.assertRaises(ValueError):w.store.save_product(w.store.products[0],0)
+        with patch.object(w,'product_not_found') as missing:
+            w.scan_input.setText('99999999')
+            w.scan()
+            missing.assert_called_once_with('99999999')
 
     def test_settings_and_tables_create(self):
         d=SettingsDialog(self.window.store,self.window)

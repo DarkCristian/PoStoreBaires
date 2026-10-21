@@ -12,7 +12,7 @@ La rama de desarrollo incorpora **persistencia local SQLite** de ventas, stock, 
 - Efectivo con vuelto, wallet, débito/crédito y pagos mixtos; importes en centavos enteros.
 - Confirmación wallet solo después de verificar manualmente la acreditación en la cuenta del comercio.
 - Pantalla del cliente en monitor seleccionable: productos, total, QR/alias y resultado.
-- QR propio PNG/JPG/JPEG o página seleccionada de un PDF, renderizada por Qt a imagen. Alias es texto para ingresar en la app, no un código escaneable.
+- QR propio PNG/JPG/JPEG o página seleccionada de un PDF, renderizada por Qt a imagen. Alias es texto para ingresar en la app, no un código escaneable, pero en algunas wallets como Mercado Pago se pueden escanear, esto esta dispuesto a aplicacion de pago desde el movil del cliente.
 - Arqueo con saldo inicial, retiros, declaración y diferencias por medio, historial y relevo de cajero al cerrar turno.
 - Insumos: categoría, costo, precio, stock mínimo, bultos/unidades, fotos e ilustraciones originales.
 - Sonidos opcionales independientes: bip y caja registradora. Tutorial integrado.
